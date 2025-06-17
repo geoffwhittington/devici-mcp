@@ -5,45 +5,51 @@ build-backend = "hatchling.build"
 [project]
 name = "devici-mcp-server"
 version = "0.1.0"
-description = "Model Context Protocol server for Devici API integration"
+description = "Model Context Protocol server for Devici API"
 readme = "README.md"
-license = { file = "LICENSE" }
+license = "MIT"
+requires-python = ">=3.10"
 authors = [
-    { name = "Your Name", email = "your.email@example.com" }
+    { name = "Geoff Whittington", email = "geoff@whittington.dev" }
 ]
+keywords = ["mcp", "devici", "model-context-protocol", "threat-modeling", "api"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+    "Topic :: Security",
 ]
-requires-python = ">=3.10"
 dependencies = [
     "mcp>=1.0.0",
     "httpx>=0.25.0",
     "python-dotenv>=1.0.0",
     "pydantic>=2.0.0",
+    "anyio>=3.0.0",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.0.0",
-    "pytest-asyncio>=0.21.0",
     "black>=23.0.0",
     "isort>=5.12.0",
-    "mypy>=1.0.0",
+    "mypy>=1.5.0",
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/geoffwhittington/devici-mcp"
+Repository = "https://github.com/geoffwhittington/devici-mcp"
+Issues = "https://github.com/geoffwhittington/devici-mcp/issues"
+Documentation = "https://github.com/geoffwhittington/devici-mcp#readme"
 
 [project.scripts]
 devici-mcp-server = "devici_mcp_server.__main__:main"
-
-[project.urls]
-Homepage = "https://github.com/your-username/devici-mcp"
-Repository = "https://github.com/your-username/devici-mcp.git"
-Issues = "https://github.com/your-username/devici-mcp/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/devici_mcp_server"]
@@ -52,11 +58,14 @@ packages = ["src/devici_mcp_server"]
 include = [
     "/src",
     "/README.md",
+    "/DEPLOYMENT.md",
     "/LICENSE",
+    "/pyproject.toml",
+    "/env.example",
 ]
 
 [tool.black]
-line-length = 100
+line-length = 88
 target-version = ['py310']
 include = '\.pyi?$'
 extend-exclude = '''
@@ -75,8 +84,12 @@ extend-exclude = '''
 
 [tool.isort]
 profile = "black"
-line_length = 100
-known_first_party = ["devici_mcp_server"]
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+line_length = 88
 
 [tool.mypy]
 python_version = "3.10"

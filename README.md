@@ -2,6 +2,10 @@
 
 A Model Context Protocol (MCP) server for interacting with the Devici API. This server provides LLM tools to manage users, collections, threat models, components, threats, mitigations, teams, and dashboard data through the Devici platform.
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
+
 ## Features
 
 The Devici MCP Server provides tools for:
@@ -27,76 +31,230 @@ The Devici MCP Server provides tools for:
 - Get components with pagination
 - Get specific component by ID
 - Get components by canvas
+- Create new components
 
 ### Threats Management
 - Get threats with pagination
 - Get specific threat by ID
 - Get threats by component
+- Create new threats
 
 ### Mitigations Management
 - Get mitigations with pagination
 - Get specific mitigation by ID
 - Get mitigations by threat
+- Create new mitigations
 
 ### Teams Management
 - Get teams with pagination
 - Get specific team by ID
+- Get team users
+- Create new teams
 
 ### Dashboard & Reports
-- Get available dashboard chart types
-- Get dashboard data with filtering
-- Get threat models report data
+- Get dashboard data
+- Get report data
+- Get threat model statistics
 
-## Installation
+### Comments & Audit
+- Get comments with pagination
+- Get specific comment by ID
+- Get audit logs
 
-1. Clone this repository:
+### Codex Integration
+- Get codex attributes
+- Get codex mitigations
+- Get codex threats
+
+## Quick Start
+
+### Using uvx (recommended)
+
+#### Option 1: From GitHub (Current)
 ```bash
-git clone <repository-url>
-cd devici-mcp
+uvx git+https://github.com/geoffwhittington/devici-mcp.git
 ```
 
-2. Install dependencies using uv (recommended) or pip:
+#### Option 2: From PyPI (Future - when published)
 ```bash
-# Using uv
-uv sync
+uvx devici-mcp-server
+```
 
-# Or using pip
-pip install -e .
+### Using uv
+
+#### Install from GitHub
+```bash
+uv pip install git+https://github.com/geoffwhittington/devici-mcp.git
+devici-mcp-server
+```
+
+#### Install from PyPI (when available)
+```bash
+uv pip install devici-mcp-server
+devici-mcp-server
+```
+
+### Using pip
+
+#### Install from GitHub
+```bash
+pip install git+https://github.com/geoffwhittington/devici-mcp.git
+devici-mcp-server
+```
+
+#### Install from PyPI (when available)
+```bash
+pip install devici-mcp-server
+devici-mcp-server
 ```
 
 ## Configuration
 
-1. Copy the environment template:
+The server requires three environment variables:
+- `DEVICI_API_BASE_URL`: Your Devici instance URL (e.g., `https://api.devici.com`)
+- `DEVICI_CLIENT_ID`: Your Devici client ID
+- `DEVICI_CLIENT_SECRET`: Your Devici client secret
+
+### Setting Environment Variables
+
+#### Option 1: Environment Variables
 ```bash
-cp env.example .env
+export DEVICI_API_BASE_URL="https://api.devici.com"
+export DEVICI_CLIENT_ID="your-client-id-here"
+export DEVICI_CLIENT_SECRET="your-client-secret-here"
 ```
 
-2. Configure your Devici API credentials in `.env`:
-```bash
+#### Option 2: .env File
+Create a `.env` file in your working directory:
+```
 DEVICI_API_BASE_URL=https://api.devici.com
-DEVICI_CLIENT_ID=your_client_id
-DEVICI_CLIENT_SECRET=your_client_secret
-DEBUG=false
+DEVICI_CLIENT_ID=your-client-id-here
+DEVICI_CLIENT_SECRET=your-client-secret-here
 ```
 
-## Usage
+### Getting Your API Credentials
+1. Log into your Devici instance
+2. Go to **Settings** > **API Access**
+3. Generate a new client ID and secret
+4. Copy the values for use as `DEVICI_CLIENT_ID` and `DEVICI_CLIENT_SECRET`
 
-### Running the Server
+## MCP Client Configuration
 
-Start the MCP server:
-```bash
-python -m devici_mcp_server
+### Claude Desktop
+Add this to your Claude Desktop configuration file:
+
+#### Option 1: From GitHub (Current)
+```json
+{
+  "mcpServers": {
+    "devici": {
+      "command": "uvx",
+      "args": ["git+https://github.com/geoffwhittington/devici-mcp.git"],
+      "env": {
+        "DEVICI_API_BASE_URL": "https://api.devici.com",
+        "DEVICI_CLIENT_ID": "your-client-id-here",
+        "DEVICI_CLIENT_SECRET": "your-client-secret-here"
+      }
+    }
+  }
+}
 ```
 
-The server will:
-1. Load configuration from environment variables
-2. Authenticate with the Devici API
-3. Start the MCP server listening on stdin/stdout
+#### Option 2: From PyPI (Future)
+```json
+{
+  "mcpServers": {
+    "devici": {
+      "command": "uvx",
+      "args": ["devici-mcp-server"],
+      "env": {
+        "DEVICI_API_BASE_URL": "https://api.devici.com",
+        "DEVICI_CLIENT_ID": "your-client-id-here",
+        "DEVICI_CLIENT_SECRET": "your-client-secret-here"
+      }
+    }
+  }
+}
+```
 
-### Using with LLM Applications
+### Cline
+Add this to your Cline MCP settings:
 
-Configure your LLM application (such as Claude Desktop) to use this MCP server by adding it to your configuration:
+#### From GitHub (Current)
+```json
+{
+  "mcpServers": {
+    "devici": {
+      "command": "uvx",
+      "args": ["git+https://github.com/geoffwhittington/devici-mcp.git"],
+      "env": {
+        "DEVICI_API_BASE_URL": "https://api.devici.com",
+        "DEVICI_CLIENT_ID": "your-client-id-here",
+        "DEVICI_CLIENT_SECRET": "your-client-secret-here"
+      }
+    }
+  }
+}
+```
 
+### Continue
+Add this to your Continue configuration:
+
+#### From GitHub (Current)
+```json
+{
+  "mcpServers": {
+    "devici": {
+      "command": "uvx",
+      "args": ["git+https://github.com/geoffwhittington/devici-mcp.git"],
+      "env": {
+        "DEVICI_API_BASE_URL": "https://api.devici.com",
+        "DEVICI_CLIENT_ID": "your-client-id-here",
+        "DEVICI_CLIENT_SECRET": "your-client-secret-here"
+      }
+    }
+  }
+}
+```
+
+### Cursor
+Add this to your Cursor configuration file:
+
+#### Option 1: From GitHub (Current)
+```json
+{
+  "mcpServers": {
+    "devici": {
+      "command": "uvx",
+      "args": ["git+https://github.com/geoffwhittington/devici-mcp.git"],
+      "env": {
+        "DEVICI_API_BASE_URL": "https://api.devici.com",
+        "DEVICI_CLIENT_ID": "your-client-id-here",
+        "DEVICI_CLIENT_SECRET": "your-client-secret-here"
+      }
+    }
+  }
+}
+```
+
+#### Option 2: Using local installation
+If you have the package installed locally:
+```json
+{
+  "mcpServers": {
+    "devici": {
+      "command": "devici-mcp-server",
+      "env": {
+        "DEVICI_API_BASE_URL": "https://api.devici.com",
+        "DEVICI_CLIENT_ID": "your-client-id-here",
+        "DEVICI_CLIENT_SECRET": "your-client-secret-here"
+      }
+    }
+  }
+}
+```
+
+#### Option 3: Using Python module directly
 ```json
 {
   "mcpServers": {
@@ -105,130 +263,90 @@ Configure your LLM application (such as Claude Desktop) to use this MCP server b
       "args": ["-m", "devici_mcp_server"],
       "env": {
         "DEVICI_API_BASE_URL": "https://api.devici.com",
-        "DEVICI_CLIENT_ID": "your_client_id",
-        "DEVICI_CLIENT_SECRET": "your_client_secret"
+        "DEVICI_CLIENT_ID": "your-client-id-here",
+        "DEVICI_CLIENT_SECRET": "your-client-secret-here"
       }
     }
   }
 }
 ```
 
-## Available Tools
-
-Once connected, you can use natural language to interact with Devici through these tools:
-
-- `get_users` - Retrieve users with pagination
-- `get_user` - Get a specific user by ID
-- `search_users` - Search users by field and text
-- `invite_user` - Invite a new user
-- `get_collections` - Retrieve collections with pagination
-- `get_collection` - Get a specific collection by ID
-- `create_collection` - Create a new collection
-- `get_threat_models` - Retrieve threat models with pagination
-- `get_threat_models_by_collection` - Get threat models for a collection
-- `get_threat_model` - Get a specific threat model by ID
-- `create_threat_model` - Create a new threat model
-- `get_components` - Retrieve components with pagination
-- `get_component` - Get a specific component by ID
-- `get_components_by_canvas` - Get components for a canvas
-- `get_threats` - Retrieve threats with pagination
-- `get_threat` - Get a specific threat by ID
-- `get_threats_by_component` - Get threats for a component
-- `get_mitigations` - Retrieve mitigations with pagination
-- `get_mitigation` - Get a specific mitigation by ID
-- `get_mitigations_by_threat` - Get mitigations for a threat
-- `get_teams` - Retrieve teams with pagination
-- `get_team` - Get a specific team by ID
-- `get_dashboard_types` - Get available dashboard chart types
-- `get_dashboard_data` - Get dashboard data with filtering
-- `get_threat_models_report` - Get threat models report data
-
-## Examples
-
-Example interactions with the LLM:
-
-```
-"Show me all users in Devici"
-"Get the details for user ID abc123"
-"Search for users with email containing 'john'"
-"Invite a new user with email john@example.com, name John Doe, role admin"
-"Create a new collection called 'Security Assessment'"
-"Get all threat models for collection xyz789"
-"Show me the dashboard data for threat trends"
-```
-
 ## Development
 
-### Project Structure
+### Prerequisites
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) installed
+- Python 3.10 or higher
 
-```
-devici-mcp/
-├── src/
-│   └── devici_mcp_server/
-│       ├── __init__.py
-│       ├── __main__.py          # Entry point
-│       ├── api_client.py        # Devici API client
-│       └── server.py            # MCP server implementation
-├── pyproject.toml               # Package configuration
-├── env.example                  # Environment template
-├── .gitignore
-├── LICENSE
-└── README.md
-```
-
-### Running Tests
-
+### Setup
 ```bash
-# Install development dependencies
-uv sync --dev
+# Clone the repository
+git clone <repository-url>
+cd devici-mcp
 
-# Run tests
-pytest
+# Create virtual environment and install dependencies
+uv sync
 
-# Run type checking
-mypy src/
-
-# Format code
-black src/
-isort src/
+# Run in development mode
+uv run python -m devici_mcp_server
 ```
 
-### API Reference
+### Testing
+```bash
+# Run the import test
+uv run python test_basic.py
 
-The server is built using the Devici API documented at: https://docs.devici.com/
+# Test with environment variables
+DEVICI_API_BASE_URL=https://api.devici.com DEVICI_CLIENT_ID=test DEVICI_CLIENT_SECRET=test uv run python -m devici_mcp_server
+```
 
-## Authentication
+### Building
+```bash
+# Build the package
+uv build
 
-The server handles authentication automatically using client credentials flow:
-1. Uses `DEVICI_CLIENT_ID` and `DEVICI_CLIENT_SECRET` to authenticate
-2. Obtains an access token from `/auth` endpoint
-3. Includes the token in all subsequent API requests
+# Install locally for testing
+uv pip install dist/*.whl
+```
 
-## Error Handling
+## Features
 
-The server includes comprehensive error handling:
-- API authentication failures
-- Network errors
-- Invalid parameters
-- Missing required fields
+- **Full API Coverage**: Supports all major Devici API endpoints
+- **Authentication**: Secure client ID/secret-based authentication
+- **Error Handling**: Comprehensive error handling and validation
+- **Environment Configuration**: Flexible configuration via environment variables
+- **Modern Python**: Built with modern Python packaging (uv, pyproject.toml)
+- **MCP Compliant**: Fully compatible with the Model Context Protocol
 
-All errors are logged and returned as descriptive error messages to the LLM.
+## API Coverage
+
+This server provides access to:
+- Users and Teams
+- Collections and Threat Models
+- Components and Threats
+- Mitigations and Comments
+- Dashboard Data and Reports
+- Audit Logs and Codex Integration
+- Search and Bulk Operations
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Run the development tools (tests, linting, formatting)
-6. Submit a pull request
-
-## License
-
-MIT License - see LICENSE file for details.
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## Support
 
-For questions about the Devici API, consult the official documentation at https://docs.devici.com/
+For issues and questions:
+- Check the [Issues](https://github.com/geoffwhittington/devici-mcp/issues) page
+- Review the Devici API documentation
+- Ensure your API credentials have proper permissions
 
-For issues with this MCP server, please open an issue in this repository. 
+---
+
+**Note**: This is an unofficial MCP server for Devici. For official Devici support, please contact the Devici team. 
