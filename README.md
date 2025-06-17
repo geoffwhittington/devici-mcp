@@ -111,7 +111,7 @@ devici-mcp-server
 ## Configuration
 
 The server requires three environment variables:
-- `DEVICI_API_BASE_URL`: Your Devici instance URL (e.g., `https://api.devici.com`)
+- `DEVICI_API_BASE_URL`: Your Devici instance URL (e.g., `https://api.devici.com/v1`)
 - `DEVICI_CLIENT_ID`: Your Devici client ID
 - `DEVICI_CLIENT_SECRET`: Your Devici client secret
 
@@ -119,7 +119,7 @@ The server requires three environment variables:
 
 #### Option 1: Environment Variables
 ```bash
-export DEVICI_API_BASE_URL="https://api.devici.com"
+export DEVICI_API_BASE_URL="https://api.devici.com/v1"
 export DEVICI_CLIENT_ID="your-client-id-here"
 export DEVICI_CLIENT_SECRET="your-client-secret-here"
 ```
@@ -151,7 +151,7 @@ Add this to your Claude Desktop configuration file:
       "command": "uvx",
       "args": ["git+https://github.com/geoffwhittington/devici-mcp.git"],
       "env": {
-        "DEVICI_API_BASE_URL": "https://api.devici.com",
+        "DEVICI_API_BASE_URL": "https://api.devici.com/v1",
         "DEVICI_CLIENT_ID": "your-client-id-here",
         "DEVICI_CLIENT_SECRET": "your-client-secret-here"
       }
@@ -168,7 +168,7 @@ Add this to your Claude Desktop configuration file:
       "command": "uvx",
       "args": ["devici-mcp-server"],
       "env": {
-        "DEVICI_API_BASE_URL": "https://api.devici.com",
+        "DEVICI_API_BASE_URL": "https://api.devici.com/v1",
         "DEVICI_CLIENT_ID": "your-client-id-here",
         "DEVICI_CLIENT_SECRET": "your-client-secret-here"
       }
@@ -188,7 +188,7 @@ Add this to your Cline MCP settings:
       "command": "uvx",
       "args": ["git+https://github.com/geoffwhittington/devici-mcp.git"],
       "env": {
-        "DEVICI_API_BASE_URL": "https://api.devici.com",
+        "DEVICI_API_BASE_URL": "https://api.devici.com/v1",
         "DEVICI_CLIENT_ID": "your-client-id-here",
         "DEVICI_CLIENT_SECRET": "your-client-secret-here"
       }
@@ -208,7 +208,7 @@ Add this to your Continue configuration:
       "command": "uvx",
       "args": ["git+https://github.com/geoffwhittington/devici-mcp.git"],
       "env": {
-        "DEVICI_API_BASE_URL": "https://api.devici.com",
+        "DEVICI_API_BASE_URL": "https://api.devici.com/api/v1",
         "DEVICI_CLIENT_ID": "your-client-id-here",
         "DEVICI_CLIENT_SECRET": "your-client-secret-here"
       }
@@ -228,7 +228,7 @@ Add this to your Cursor configuration file:
       "command": "uvx",
       "args": ["git+https://github.com/geoffwhittington/devici-mcp.git"],
       "env": {
-        "DEVICI_API_BASE_URL": "https://api.devici.com",
+        "DEVICI_API_BASE_URL": "https://api.devici.com/api/v1",
         "DEVICI_CLIENT_ID": "your-client-id-here",
         "DEVICI_CLIENT_SECRET": "your-client-secret-here"
       }
@@ -245,7 +245,7 @@ If you have the package installed locally:
     "devici": {
       "command": "devici-mcp-server",
       "env": {
-        "DEVICI_API_BASE_URL": "https://api.devici.com",
+        "DEVICI_API_BASE_URL": "https://api.devici.com/api/v1",
         "DEVICI_CLIENT_ID": "your-client-id-here",
         "DEVICI_CLIENT_SECRET": "your-client-secret-here"
       }
@@ -262,7 +262,7 @@ If you have the package installed locally:
       "command": "python",
       "args": ["-m", "devici_mcp_server"],
       "env": {
-        "DEVICI_API_BASE_URL": "https://api.devici.com",
+        "DEVICI_API_BASE_URL": "https://api.devici.com/api/v1",
         "DEVICI_CLIENT_ID": "your-client-id-here",
         "DEVICI_CLIENT_SECRET": "your-client-secret-here"
       }
@@ -296,7 +296,7 @@ uv run python -m devici_mcp_server
 uv run python test_basic.py
 
 # Test with environment variables
-DEVICI_API_BASE_URL=https://api.devici.com DEVICI_CLIENT_ID=test DEVICI_CLIENT_SECRET=test uv run python -m devici_mcp_server
+DEVICI_API_BASE_URL=https://api.devici.com/api/v1 DEVICI_CLIENT_ID=test DEVICI_CLIENT_SECRET=test uv run python -m devici_mcp_server
 ```
 
 ### Building
