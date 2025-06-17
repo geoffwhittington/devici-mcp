@@ -127,7 +127,7 @@ export DEVICI_CLIENT_SECRET="your-client-secret-here"
 #### Option 2: .env File
 Create a `.env` file in your working directory:
 ```
-DEVICI_API_BASE_URL=https://api.devici.com
+DEVICI_API_BASE_URL=https://api.devici.com/v1
 DEVICI_CLIENT_ID=your-client-id-here
 DEVICI_CLIENT_SECRET=your-client-secret-here
 ```
