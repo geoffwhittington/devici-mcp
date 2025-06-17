@@ -3,10 +3,8 @@
 Main entry point for the Devici MCP Server.
 """
 
-import asyncio
 import logging
 import sys
-from .server import main
 
 
 def setup_logging() -> None:
@@ -17,13 +15,19 @@ def setup_logging() -> None:
     )
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """Main entry point that runs the server."""
     setup_logging()
     try:
-        asyncio.run(main())
+        from .server import main as server_main
+        server_main()
     except KeyboardInterrupt:
         logging.info("Server stopped by user")
         sys.exit(0)
     except Exception as e:
         logging.error(f"Server error: {e}")
-        sys.exit(1) 
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main() 

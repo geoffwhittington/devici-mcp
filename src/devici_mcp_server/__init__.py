@@ -8,6 +8,6 @@ __version__ = "0.1.0"
 __author__ = "Devici MCP Server Team"
 __email__ = "support@example.com"
 
-from .server import DeviciMCPServer
+from .server import mcp
 
-__all__ = ["DeviciMCPServer"] 
+__all__ = ["mcp"] 
