@@ -2,6 +2,10 @@
 
 A Model Context Protocol (MCP) server for interacting with the Devici API. This server provides LLM tools to manage users, collections, threat models, components, threats, mitigations, teams, and dashboard data through the Devici platform.
 
+<a href="https://glama.ai/mcp/servers/@geoffwhittington/devici-mcp">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@geoffwhittington/devici-mcp/badge" alt="Devici Server MCP server" />
+</a>
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
@@ -349,4 +353,4 @@ For issues and questions:
 
 ---
 
-**Note**: This is an unofficial MCP server for Devici. For official Devici support, please contact the Devici team. 
+**Note**: This is an unofficial MCP server for Devici. For official Devici support, please contact the Devici team.
