@@ -1,0 +1,113 @@
+{
+    "otmVersion": "0.2.0",
+    "project": {
+        "name": "Draft threat model",
+        "id": "5462f211-e184-49b8-9a5b-230a16d84a78",
+        "description": null,
+        "owner": "Geoff Whittington",
+        "ownerContact": "geoff@securitycompass.com",
+        "tags": [],
+        "attributes": null
+    },
+    "representations": [
+        {
+            "name": "Canvas 1",
+            "id": "10161d4d-bfa5-4255-b9c0-53ddd95529c5",
+            "type": "diagram",
+            "size": null,
+            "attributes": null
+        }
+    ],
+    "assets": [],
+    "components": [
+        {
+            "representationId": "10161d4d-bfa5-4255-b9c0-53ddd95529c5",
+            "name": "Process",
+            "id": "40ba722e-97d6-499b-938f-2373e44b499d",
+            "description": "dsfdfdsf",
+            "metaData": {
+                "id": "",
+                "user": {
+                    "id": "8d1f7d98-dca2-4d13-8187-24904cd00366",
+                    "role": "admin",
+                    "email": "geoff@securitycompass.com",
+                    "tierData": {
+                        "tier": "business",
+                        "seats": {
+                            "limit": 10,
+                            "available": 9,
+                            "isSeatsLimitExceeded": false
+                        },
+                        "codeGenius": {
+                            "limit": 100,
+                            "available": 100
+                        },
+                        "isBetaUser": false,
+                        "billingPeriod": "month",
+                        "aiDiagramAssistant": {
+                            "limit": 50000,
+                            "available": 49572
+                        }
+                    },
+                    "last_name": "Whittington",
+                    "first_name": "Geoff",
+                    "productFruitsHash": "7j9kUt1Fn95ZBDhNXy/8s1sZ6iLvrLrn1XvrL4NvuTc=",
+                    "isOnboardingCompleted": true
+                },
+                "label": "Process",
+                "selectedBy": [],
+                "representation": "10161d4d-bfa5-4255-b9c0-53ddd95529c5"
+            },
+            "parent": {
+                "trustZone": "40ba722e-97d6-499b-938f-2373e44b499d"
+            },
+            "type": "processNode",
+            "tags": [],
+            "representations": [
+                {
+                    "representation": "10161d4d-bfa5-4255-b9c0-53ddd95529c5",
+                    "id": "10161d4d-bfa5-4255-b9c0-53ddd95529c5",
+                    "position": {
+                        "x": 1092.5,
+                        "y": -902.5
+                    },
+                    "size": {
+                        "width": 1152,
+                        "height": 1047
+                    }
+                }
+            ],
+            "assets": [],
+            "threats": [
+                {
+                    "threat": "b53abb96-c089-4dc9-9e5e-26c312ce81dd",
+                    "state": "open",
+                    "mitigations": []
+                }
+            ],
+            "attributes": {}
+        }
+    ],
+    "dataflows": [],
+    "trustZones": [],
+    "threats": [
+        {
+            "name": "sdfdfssdf",
+            "id": "b53abb96-c089-4dc9-9e5e-26c312ce81dd",
+            "description": "",
+            "categories": [],
+            "cwes": [],
+            "risk": {
+                "likelihood": -1,
+                "impact": -1
+            },
+            "attributes": null,
+            "tags": [],
+            "isCustom": true,
+            "priority": "medium",
+            "refId": null,
+            "source": null
+        }
+    ],
+    "mitigations": []
+}

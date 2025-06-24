@@ -1,0 +1,96 @@
+{
+  "otmVersion": "0.2.0",
+  "project": {
+    "name": "Standard Web App Security Workflow",
+    "id": "webapp-security-workflow-001",
+    "description": "Complete security workflow template for new web applications covering 5 phases: Quick Wins, Core Security, Advanced Controls, Threat Modeling, and Monitoring",
+    "owner": "Security Team",
+    "tags": ["workflow", "web-app", "security", "owasp", "checklist"],
+    "attributes": {
+      "workflowType": "Security Implementation",
+      "timeToComplete": "3-4 weeks",
+      "riskReduction": "85%"
+    }
+  },
+  "trustZones": [
+    {
+      "id": "phase1-quickwins",
+      "name": "Phase 1: Quick Security Wins (1 Hour)",
+      "description": "Immediate security improvements",
+      "risk": {
+        "trustRating": 2
+      }
+    },
+    {
+      "id": "phase2-core", 
+      "name": "Phase 2: Core Security (Week 1)",
+      "description": "Essential security controls",
+      "risk": {
+        "trustRating": 3
+      }
+    },
+    {
+      "id": "phase3-advanced",
+      "name": "Phase 3: Advanced Controls (Week 2-3)", 
+      "description": "Enterprise-grade security",
+      "risk": {
+        "trustRating": 4
+      }
+    }
+  ],
+  "components": [
+    {
+      "id": "https-setup",
+      "name": "HTTPS/TLS Implementation",
+      "type": "security-control",
+      "description": "Enable HTTPS everywhere",
+      "parent": {
+        "trustZone": "phase1-quickwins"
+      },
+      "tags": ["tls", "encryption"]
+    },
+    {
+      "id": "input-validation",
+      "name": "Input Validation System",
+      "type": "security-control", 
+      "description": "Validate all user inputs",
+      "parent": {
+        "trustZone": "phase1-quickwins"
+      },
+      "tags": ["validation", "xss-prevention"]
+    },
+    {
+      "id": "sql-injection-prevention",
+      "name": "SQL Injection Prevention",
+      "type": "security-control",
+      "description": "Use parameterized queries",
+      "parent": {
+        "trustZone": "phase2-core"
+      },
+      "tags": ["sql-injection", "database-security"]
+    }
+  ],
+  "threats": [
+    {
+      "id": "W001",
+      "name": "Incomplete Implementation",
+      "description": "Skipping workflow phases leaves vulnerabilities",
+      "severity": "High",
+      "type": "Information Disclosure",
+      "targets": ["phase1-quickwins"]
+    }
+  ],
+  "mitigations": [
+    {
+      "id": "WM001",
+      "name": "Follow Workflow Checklist",
+      "description": "Complete each phase systematically",
+      "reducesRisk": [
+        {
+          "threat": "W001",
+          "amount": 80
+        }
+      ]
+    }
+  ]
+} 
