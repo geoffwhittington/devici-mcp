@@ -19,7 +19,7 @@ async def sample_otm_import():
     print("=" * 60)
     
     # Step 1: Show the OTM file structure
-    otm_file = "/home/geoff-whittington/projects/devici-mcp/web-app-security-workflow.otm"
+    otm_file = "./web-app-security-workflow.otm"
     
     print("📄 Step 1: Reading OTM File")
     print("-" * 30)

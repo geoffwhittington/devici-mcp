@@ -6,10 +6,8 @@ import json
 import asyncio
 import httpx
 from src.devici_mcp_server.api_client import create_client_from_env
-import requests
 import os
 from dotenv import load_dotenv
-
 # Load environment variables
 load_dotenv()
 
@@ -39,7 +37,7 @@ def get_access_token():
         try:
             print(f"🔑 Trying auth at: {auth_url}")
             
-            response = requests.post(auth_url, json=auth_data)
+            response = httpx.post(auth_url, json=auth_data)
             print(f"🔑 Auth response status: {response.status_code}")
             
             if response.status_code in [200, 201]:
@@ -56,16 +54,106 @@ def get_access_token():
     print("❌ All auth endpoints failed")
     return None
 
-def post_otm_to_devici(otm_file_path, threat_model_id=None):
+def get_threat_model(threat_model_id):
     """
-    Simple script to POST OTM JSON directly to Devici's OTM import endpoint
+    Fetch an existing threat model by ID from Devici API.
     """
-    
-    # Get access token via OAuth
+    access_token = get_access_token()
+    if not access_token:
+        return None
+
+    base_url = os.getenv('DEVICI_API_BASE_URL', 'https://api.devici.com/api/v1')
+    url = f"{base_url}/threat-models/{threat_model_id}"
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+        'Content-Type': 'application/json'
+    }
+    try:
+        response = httpx.get(url, headers=headers)
+        print(f"GET {url} -> {response.status_code}")
+        if response.status_code == 200:
+            print("✅ Threat model fetched successfully.")
+            return response.json()
+        else:
+            print(f"❌ Failed to fetch threat model: {response.text}")
+            return None
+    except Exception as e:
+        print(f"❌ Error fetching threat model: {e}")
+        return None
+
+def get_first_collection_id():
+    """
+    Fetch the first available collection ID from the Devici API.
+    If none exist, create a new collection and return its ID.
+    """
+    access_token = get_access_token()
+    if not access_token:
+        return None
+
+    base_url = os.getenv('DEVICI_API_BASE_URL', 'https://api.devici.com/api/v1')
+    url = f"{base_url}/collections?page=1&limit=10"
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+        'Content-Type': 'application/json'
+    }
+    try:
+        response = httpx.get(url, headers=headers)
+        print(f"GET {url} -> {response.status_code}")
+        if response.status_code == 200:
+            collections = response.json()
+            if isinstance(collections, list) and collections:
+                collection_id = collections[0].get("id")
+                print(f"✅ Using collectionId: {collection_id}")
+                return collection_id
+            elif isinstance(collections, dict) and "collections" in collections and collections["collections"]:
+                collection_id = collections["collections"][0].get("id")
+                print(f"✅ Using collectionId: {collection_id}")
+                return collection_id
+            else:
+                print("❌ No collections found in API response. Attempting to create a new collection...")
+                # Try to create a new collection
+                create_url = f"{base_url}/collections"
+                collection_payload = {
+                    "title": "Auto-created Collection",
+                    "description": "Created automatically by import script"
+                }
+                try:
+                    create_resp = httpx.post(create_url, json=collection_payload, headers=headers)
+                    print(f"POST {create_url} -> {create_resp.status_code}")
+                    if create_resp.status_code in [200, 201]:
+                        created = create_resp.json()
+                        # The response may be a dict with the new collection's id
+                        collection_id = created.get("id")
+                        if not collection_id and "collection" in created:
+                            collection_id = created["collection"].get("id")
+                        if collection_id:
+                            print(f"✅ Created and using collectionId: {collection_id}")
+                            return collection_id
+                        else:
+                            print("❌ Could not parse collectionId from create response.")
+                            return None
+                    else:
+                        print(f"❌ Failed to create collection: {create_resp.text}")
+                        return None
+                except Exception as ce:
+                    print(f"❌ Error creating collection: {ce}")
+                    return None
+        else:
+            print(f"❌ Failed to fetch collections: {response.text}")
+            return None
+    except Exception as e:
+        print(f"❌ Error fetching collections: {e}")
+        return None
+
+def import_otm_to_threat_model(otm_file_path, threat_model_id):
+    """
+    Import an OTM JSON to a specific threat model using the documented endpoint.
+    If collectionId is missing, fetch one from the API and add it.
+    """
     access_token = get_access_token()
     if not access_token:
         return False
-    
+
     # Read the OTM file
     try:
         with open(otm_file_path, 'r') as f:
@@ -75,126 +163,64 @@ def post_otm_to_devici(otm_file_path, threat_model_id=None):
     except Exception as e:
         print(f"❌ Error reading OTM file: {e}")
         return False
-    
-    # Add collection ID to the OTM data if not present
+
+    # Ensure collectionId is present, or fetch one if missing
     if "collectionId" not in otm_data:
-        # Use Sandbox collection ID (based on existing threat models we saw)
-        sandbox_collection_id = "2eca33f8-4575-4999-90c4-09a67e2ddc7b"
-        otm_data["collectionId"] = sandbox_collection_id
-        print(f"📁 Added collection ID: {sandbox_collection_id}")
-    
-    # Test different potential OTM import endpoints based on the docs
+        print("ℹ️ OTM data missing collectionId. Attempting to fetch one from the API...")
+        collection_id = get_first_collection_id()
+        if not collection_id:
+            print("❌ Could not retrieve a collectionId. Aborting import.")
+            return False
+        otm_data["collectionId"] = collection_id
+        print(f"📁 Added collectionId: {collection_id}")
+
     base_url = os.getenv('DEVICI_API_BASE_URL', 'https://api.devici.com/api/v1')
-    
-    # Try multiple endpoint variations that might exist for OTM import
-    endpoints_to_try = [
-        "/threat-models/import/otm",
-        "/threat-models/otm/import", 
-        "/threat-models/import",
-        "/otm/import",
-        "/import/otm"
-    ]
-    
-    if threat_model_id:
-        # Also try endpoints with threat model ID, including the export pattern
-        endpoints_to_try.extend([
-            f"/threat-models/{threat_model_id}/export/otm",  # Same as export but with POST
-            f"/threat-models/{threat_model_id}/import/otm",
-            f"/threat-models/{threat_model_id}/otm/import",
-            f"/threat-models/{threat_model_id}/import",
-            f"/threat-models/{threat_model_id}/otm"  # Just the base OTM endpoint
-        ])
-    
-    # Set up headers
+    url = f"{base_url}/threat-models/otm/{threat_model_id}"
     headers = {
         'Authorization': f'Bearer {access_token}',
         'Content-Type': 'application/json'
     }
-    
-    print(f"📊 Data size: {len(json.dumps(otm_data))} bytes")
-    
-    # First, test if the export endpoint works to confirm the correct path pattern
-    if threat_model_id:
-        export_url = f"{base_url}/threat-models/{threat_model_id}/export/otm"
-        print(f"\n🔍 First, testing export endpoint: GET {export_url}")
-        
-        try:
-            export_response = requests.get(export_url, headers=headers)
-            print(f"📈 Export Status Code: {export_response.status_code}")
-            
-            if export_response.status_code == 200:
-                print("✅ Export endpoint works! This confirms the path pattern is correct.")
-                # Try import variations based on the working export path
-                import_variations = [
-                    f"/threat-models/{threat_model_id}/import/otm",  # Replace export with import
-                    f"/threat-models/{threat_model_id}/otm",        # Just the base path
-                    f"/threat-models/{threat_model_id}/import"      # Import without otm
-                ]
-                # Insert these at the beginning to try first
-                for variation in reversed(import_variations):
-                    if variation not in [ep for ep in endpoints_to_try]:
-                        endpoints_to_try.insert(0, variation)
-            else:
-                print(f"❌ Export endpoint failed: {export_response.text[:200]}...")
-                
-        except Exception as e:
-            print(f"❌ Error testing export: {e}")
-    
-    for endpoint in endpoints_to_try:
-        url = f"{base_url}{endpoint}"
-        
-        # Try both POST and PUT methods, especially for endpoints with threat model ID
-        methods_to_try = ["POST"]
-        if threat_model_id and threat_model_id in endpoint:
-            methods_to_try = ["POST", "PUT"]  # PUT might be used for updating existing threat models
-        
-        for method in methods_to_try:
-            print(f"\n📡 Trying {method}: {url}")
-            
+    print(f"POST {url} (data size: {len(json.dumps(otm_data))} bytes)")
+    try:
+        response = httpx.post(url, json=otm_data, headers=headers)
+        print(f"📈 Status Code: {response.status_code}")
+        if response.text:
             try:
-                # Make the request with the specified method
-                response = requests.request(method, url, json=otm_data, headers=headers)
-                
-                print(f"📈 Status Code: {response.status_code}")
-                
-                if response.text:
-                    try:
-                        response_json = response.json()
-                        print(f"📋 Response: {json.dumps(response_json, indent=2)}")
-                    except:
-                        print(f"📋 Response Text: {response.text}")
-                
-                if response.status_code in [200, 201]:
-                    print("✅ OTM import successful!")
-                    return True
-                elif response.status_code not in [404, 405]:  # 405 = Method Not Allowed
-                    # If it's not a 404 or 405, the endpoint might exist but there's another issue
-                    print(f"🔍 Endpoint exists but failed with status {response.status_code}")
-                    if method == "PUT":  # If PUT failed, still try other endpoints
-                        continue
-                    else:
-                        break  # If POST failed with non-404/405, break from this endpoint
-                    
-            except Exception as e:
-                print(f"❌ Error making request: {e}")
-    
-    print("❌ All OTM import endpoints failed")
-    return False
+                response_json = response.json()
+                print(f"📋 Response: {json.dumps(response_json, indent=2)}")
+            except Exception:
+                print(f"📋 Response Text: {response.text}")
+        if response.status_code in [200, 201]:
+            print("✅ OTM import successful!")
+            return True
+        else:
+            print("❌ OTM import failed.")
+            return False
+    except Exception as e:
+        print(f"❌ Error importing OTM: {e}")
+        return False
 
 if __name__ == "__main__":
-    # Use an existing threat model ID
-    threat_model_id = "cd977df6-9cad-4cfa-9259-b4725cc0cda4"  # First Draft threat model
-    
-    # Test with the draft threat model file
-    otm_file = "Draft threat model_otm_report.json"
-    
+    # Example threat model ID and OTM file
+    threat_model_id = "cd977df6-9cad-4cfa-9259-b4725cc0cda4"  # Replace with your actual threat model ID
+    otm_file = "Draft threat model_otm_report.json"  # Replace with your OTM file path
+
+    # Fetch and display the existing threat model
+    print(f"🔍 Fetching threat model: {threat_model_id}")
+    threat_model = get_threat_model(threat_model_id)
+    if threat_model:
+        print(f"Threat Model Name: {threat_model.get('name', 'Unknown')}")
+    else:
+        print("Failed to fetch threat model. Aborting import.")
+        exit(1)
+
+    # Import the OTM to the threat model
     if os.path.exists(otm_file):
-        print(f"🎯 Testing OTM import to threat model: {threat_model_id}")
-        success = post_otm_to_devici(otm_file, threat_model_id)
-        
+        print(f"🎯 Importing OTM to threat model: {threat_model_id}")
+        success = import_otm_to_threat_model(otm_file, threat_model_id)
         if success:
             print("🎉 Import completed successfully!")
         else:
             print("💥 Import failed - check logs above")
     else:
-        print(f"❌ OTM file not found: {otm_file}") 
+        print(f"❌ OTM file not found: {otm_file}")
