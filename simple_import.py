@@ -218,7 +218,7 @@ def import_otm_to_threat_model(otm_file_path, threat_model_id):
 if __name__ == "__main__":
     # Example threat model ID and OTM file
     threat_model_id = "cd977df6-9cad-4cfa-9259-b4725cc0cda4"  # Replace with your actual threat model ID
-    otm_file = "web-app-security-workflow.otm"  # Replace with your OTM file path
+    otm_file = "example_otm_report.json"  # Replace with your OTM file path
 
     # Fetch and display the existing threat model
     print(f"🔍 Fetching threat model: {threat_model_id}")
