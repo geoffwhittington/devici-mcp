@@ -157,7 +157,7 @@ def get_first_collection_id():
         return None
 
 
-def import_otm_to_threat_model(otm_file_path, threat_model_id):
+def import_otm_to_threat_model(otm_file_path):
     """
     Import an OTM JSON to a specific threat model using the documented endpoint.
     If collectionId is missing, fetch one from the API and add it.
@@ -176,8 +176,11 @@ def import_otm_to_threat_model(otm_file_path, threat_model_id):
         print(f"❌ Error reading OTM file: {e}")
         return False
 
-    # Ensure collectionId is present, or fetch one if missing
-    if "collectionId" not in otm_data:
+    # Determine collectionId for both the OTM data and the endpoint path
+    if "collectionId" in otm_data:
+        collection_id = otm_data["collectionId"]
+        print(f"📁 Using collectionId from OTM data: {collection_id}")
+    else:
         print(
             "ℹ️ OTM data missing collectionId. Attempting to fetch one from the API..."
         )
@@ -189,7 +192,7 @@ def import_otm_to_threat_model(otm_file_path, threat_model_id):
         print(f"📁 Added collectionId: {collection_id}")
 
     base_url = os.getenv("DEVICI_API_BASE_URL", "https://api.devici.com/api/v1")
-    url = f"{base_url}/threat-models/otm"
+    url = f"{base_url}/threat-models/otm/{collection_id}"
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json",
@@ -231,8 +234,8 @@ if __name__ == "__main__":
 
     # Import the OTM to the threat model
     if os.path.exists(otm_file):
-        print(f"🎯 Importing OTM to threat model: {threat_model_id}")
-        success = import_otm_to_threat_model(otm_file, threat_model_id)
+        print(f"🎯 Importing OTM to threat model")
+        success = import_otm_to_threat_model(otm_file)
         if success:
             print("🎉 Import completed successfully!")
         else:
