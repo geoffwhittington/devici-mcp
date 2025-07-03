@@ -1581,6 +1581,14 @@ async def import_otm_to_devici(otm_file_path: str, collection_name: str = "Sandb
         if not os.path.exists(otm_file_path):
             return f"❌ Error: File '{otm_file_path}' not found"
         
+        # Read the OTM file
+        with open(otm_file_path, 'r') as f:
+            otm_data = json.load(f)
+        
+        project_name = otm_data.get('project', {}).get('name', 'Unknown')
+        print(f"✅ Loaded OTM file: {otm_file_path}")
+        print(f"📊 Project: {project_name}")
+        
         # Get collection ID by name
         client = create_client_from_env()
         async with client:
@@ -1595,48 +1603,53 @@ async def import_otm_to_devici(otm_file_path: str, collection_name: str = "Sandb
                     break
             
             if not target_collection_id:
-                return f"❌ Error: Collection '{collection_name}' not found. Available collections: {[c.get('title', 'Unknown') for c in collections]}"
+                # Try to create the collection if it doesn't exist
+                print(f"ℹ️ Collection '{collection_name}' not found. Creating new collection...")
+                try:
+                    collection_data = {
+                        "title": collection_name,
+                        "description": f"Auto-created collection for {project_name} import"
+                    }
+                    new_collection = await client.create_collection(collection_data)
+                    target_collection_id = new_collection.get("id")
+                    if target_collection_id:
+                        print(f"✅ Created collection: {collection_name} (ID: {target_collection_id})")
+                    else:
+                        return f"❌ Error: Could not create collection '{collection_name}'"
+                except Exception as e:
+                    return f"❌ Error creating collection: {str(e)}"
             
-            # JUST POST THE OTM JSON - that's it!
-            with open(otm_file_path, 'r') as f:
-                otm_data = json.load(f)
+            # Add collection ID to the OTM data if not present
+            if "collectionId" not in otm_data:
+                otm_data["collectionId"] = target_collection_id
+                print(f"📁 Added collectionId: {target_collection_id}")
             
-            # Add collection ID to the OTM data
-            otm_data["collectionId"] = target_collection_id
+            # Use the correct endpoint format: /api/threats/otm/{collection_id}
+            endpoint = f"/api/threats/otm/{target_collection_id}"
+            print(f"POST {endpoint} (data size: {len(json.dumps(otm_data))} bytes)")
             
-            # POST directly to /api/threats/otm
-            result = await client._make_request("POST", "/api/threats/otm", json_data=otm_data)
-            
-            # Parse response
-            threat_model = {"title": otm_data.get("project", {}).get("name", "Imported Model")}
-            components_created = len(otm_data.get("components", []))
-            threats_created = len(otm_data.get("threats", []))
-            mitigations_created = len(otm_data.get("mitigations", []))
-            errors = []
-            
-            status_emoji = "✅" if not errors else "⚠️"
-            
-            error_section = ""
-            if errors:
-                error_section = f"""
-**⚠️ Import Warnings:**
-{chr(10).join(f"   • {error}" for error in errors[:5])}
-{f"   • ... and {len(errors) - 5} more errors" if len(errors) > 5 else ""}
-"""
-            
-            return f"""
-{status_emoji} **OTM File Imported to Devici!**
+            try:
+                result = await client._make_request("POST", endpoint, json_data=otm_data)
+                print(f"✅ OTM import successful!")
+                
+                # Parse response for summary
+                components_created = len(otm_data.get("components", []))
+                threats_created = len(otm_data.get("threats", []))
+                mitigations_created = len(otm_data.get("mitigations", []))
+                
+                return f"""
+✅ **OTM File Imported to Devici!**
 
 **📁 File:** `{otm_file_path}`
 **📂 Collection:** {collection_name}
 **🆔 Collection ID:** {target_collection_id}
 
 **📊 Import Summary:**
-   • 🎯 **Threat Model:** {threat_model.get('title', 'Created')}
+   • 🎯 **Threat Model:** {project_name}
    • 🏗️ **Components:** {components_created} created
    • 🚨 **Threats:** {threats_created} created  
    • 🛡️ **Mitigations:** {mitigations_created} created
-{error_section}
+
 **🚀 Next Steps:**
 1. **Open Devici Platform** → Navigate to your '{collection_name}' collection
 2. **View Threat Model** → You should now see components and threats!
@@ -1646,6 +1659,10 @@ async def import_otm_to_devici(otm_file_path: str, collection_name: str = "Sandb
 
 **🔗 Access:** Your complete threat model with components and threats is now available in Devici!
 """
+                
+            except Exception as api_error:
+                print(f"❌ OTM import failed: {api_error}")
+                return f"❌ Error importing OTM to Devici: {str(api_error)}"
             
     except Exception as e:
         return f"❌ Error importing OTM file: {str(e)}"
