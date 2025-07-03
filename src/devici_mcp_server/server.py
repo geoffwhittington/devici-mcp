@@ -2397,34 +2397,7 @@ create_component_with_visual_placement("External API", "external-service", "{thr
 # ORIGINAL TOOLS - All Preserved for Compatibility
 # =============================================================================
 
-# User Management Tools
-@mcp.tool()
-async def get_users(limit: int = 20, page: int = 0) -> str:
-    """Get users from Devici with pagination"""
-    async with create_client_from_env() as client:
-        result = await client.get_users(limit=limit, page=page)
-        return str(result)
-
-@mcp.tool()
-async def get_user(user_id: str) -> str:
-    """Get a specific user by ID"""
-    async with create_client_from_env() as client:
-        result = await client.get_user(user_id)
-        return str(result)
-
-@mcp.tool()
-async def search_users(field: str, text: str) -> str:
-    """Search users by field and text"""
-    async with create_client_from_env() as client:
-        result = await client.search_users(field, text)
-        return str(result)
-
-@mcp.tool()
-async def invite_user(email: str, first_name: str, last_name: str, role: str) -> str:
-    """Invite a new user to Devici"""
-    async with create_client_from_env() as client:
-        result = await client.invite_user(email, first_name, last_name, role)
-        return str(result)
+# User Management Tools - REMOVED (cruft, not needed for threat modeling)
 
 # Collections Management Tools
 @mcp.tool()
