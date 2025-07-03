@@ -325,14 +325,7 @@ start_threat_modeling("An e-commerce API that processes payments")
     
     return formatted
 
-@mcp.tool()
-async def create_new_collection(name: str, description: str = None) -> str:
-    """Create a new collection to organize my threat models - like creating a project folder"""
-    try:
-        result = await create_collection(name, description)
-        return f"✅ **Collection Created!**\n\n📁 **{name}** is ready for your threat models.\n\nNext: Use 'create_new_threat_model' to add models to this collection."
-    except Exception as e:
-        return f"❌ Failed to create collection: {str(e)}"
+# Removed duplicate create_new_collection - use create_collection instead
 
 @mcp.tool()
 async def create_new_threat_model(name: str, collection_name: str = None, description: str = None) -> str:
