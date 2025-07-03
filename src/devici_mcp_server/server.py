@@ -1145,11 +1145,12 @@ async def generate_otm_and_create_threat_model(collection_name: str = None) -> s
             {
                 "id": str(uuid.uuid4()),
                 "name": threat["name"],
-                "category": threat["category"],
+                "categories": [threat["category"]],
                 "description": threat["description"],
-                "impact": threat["impact"],
-                "likelihood": threat["likelihood"],
-                "severity": threat["severity"],
+                "risk": {
+                    "impact": threat["impact"],
+                    "impactComment": f"{threat['severity']} severity {threat['category']} threat"
+                },
                 "tags": ["stride", threat["category"]]
             } for threat in stride_threats
         ],
@@ -1498,11 +1499,12 @@ async def create_otm_file_for_devici() -> str:
             {
                 "id": str(uuid.uuid4()),
                 "name": threat["name"],
-                "category": threat["category"],
+                "categories": [threat["category"]],
                 "description": threat["description"],
-                "impact": threat["impact"],
-                "likelihood": threat["likelihood"],
-                "severity": threat["severity"],
+                "risk": {
+                    "impact": threat["impact"],
+                    "impactComment": f"{threat['severity']} severity {threat['category']} threat"
+                },
                 "tags": ["stride", threat["category"]]
             } for threat in stride_threats
         ],
@@ -2005,11 +2007,12 @@ async def create_otm_from_description(project_description: str, tech_stack: str 
             {
                 "id": str(uuid.uuid4()),
                 "name": threat["name"],
-                "category": threat["category"],
+                "categories": [threat["category"]],
                 "description": threat["description"],
-                "impact": threat["impact"],
-                "likelihood": threat["likelihood"],
-                "severity": threat["severity"],
+                "risk": {
+                    "impact": threat["impact"],
+                    "impactComment": f"{threat['severity']} severity {threat['category']} threat"
+                },
                 "tags": ["stride", threat["category"]]
             } for threat in threats
         ],
