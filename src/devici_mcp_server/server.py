@@ -2524,19 +2524,7 @@ async def get_mitigations_by_threat(threat_id: str) -> str:
         return str(result)
 
 # Teams Management Tools
-@mcp.tool()
-async def get_teams(limit: int = 20, page: int = 0) -> str:
-    """Get teams from Devici with pagination"""
-    async with create_client_from_env() as client:
-        result = await client.get_teams(limit=limit, page=page)
-        return str(result)
-
-@mcp.tool()
-async def get_team(team_id: str) -> str:
-    """Get a specific team by ID"""
-    async with create_client_from_env() as client:
-        result = await client.get_team(team_id)
-        return str(result)
+# Team Management Tools - REMOVED (not needed for threat modeling)
 
 # Dashboard and Reporting Tools
 @mcp.tool()
