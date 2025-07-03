@@ -130,3 +130,7 @@ mcp = FastMCP("devici-mcp-server")
 # QUICK START & HELP TOOLS - Natural Language Interface
 # =============================================================================
 
+def main():
+    """Run the MCP server"""
+    mcp.run()
+
