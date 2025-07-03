@@ -109,8 +109,16 @@ Original API tools remain available for advanced users.
 import logging
 import json
 import os
+from pathlib import Path
 from mcp.server.fastmcp import FastMCP
 from .api_client import create_client_from_env
+
+try:
+    import jsonschema
+    from jsonschema import validate, ValidationError
+    JSONSCHEMA_AVAILABLE = True
+except ImportError:
+    JSONSCHEMA_AVAILABLE = False
 
 
 logger = logging.getLogger(__name__)
@@ -1585,9 +1593,15 @@ async def import_otm_to_devici(otm_file_path: str, collection_name: str = "Sandb
         with open(otm_file_path, 'r') as f:
             otm_data = json.load(f)
         
+        # Validate OTM data against official schema
+        is_valid, validation_message = validate_otm_data(otm_data)
+        if not is_valid:
+            return f"❌ OTM file failed schema validation:\n{validation_message}\n\nPlease ensure the file conforms to the Open Threat Model standard."
+        
         project_name = otm_data.get('project', {}).get('name', 'Unknown')
         print(f"✅ Loaded OTM file: {otm_file_path}")
         print(f"📊 Project: {project_name}")
+        print(f"✅ {validation_message}")
         
         # Get collection ID by name
         client = create_client_from_env()
@@ -1667,6 +1681,44 @@ async def import_otm_to_devici(otm_file_path: str, collection_name: str = "Sandb
     except Exception as e:
         return f"❌ Error importing OTM file: {str(e)}"
 
+
+# =============================================================================
+# OTM VALIDATION UTILITY
+# =============================================================================
+
+def load_otm_schema() -> dict:
+    """Load the OTM JSON schema for validation."""
+    schema_path = Path(__file__).parent.parent.parent / "otm_schema.json"
+    
+    if not schema_path.exists():
+        # Try current working directory
+        schema_path = Path.cwd() / "otm_schema.json"
+    
+    if not schema_path.exists():
+        raise FileNotFoundError("OTM schema file not found. Please ensure otm_schema.json is available.")
+    
+    with open(schema_path, 'r') as f:
+        return json.load(f)
+
+def validate_otm_data(otm_data: dict) -> tuple[bool, str]:
+    """
+    Validate OTM data against the official schema.
+    Returns (is_valid, message)
+    """
+    if not JSONSCHEMA_AVAILABLE:
+        return True, "⚠️ Schema validation skipped (jsonschema not available)"
+    
+    try:
+        schema = load_otm_schema()
+        validate(instance=otm_data, schema=schema)
+        return True, "✅ OTM data is valid according to official schema"
+    except FileNotFoundError as e:
+        return True, f"⚠️ Schema validation skipped: {e}"
+    except ValidationError as e:
+        error_path = " -> ".join(str(x) for x in e.absolute_path) if e.absolute_path else "root"
+        return False, f"❌ Schema validation failed at {error_path}: {e.message}"
+    except Exception as e:
+        return True, f"⚠️ Schema validation skipped due to error: {e}"
 
 @mcp.tool()
 async def create_otm_from_description(project_description: str, tech_stack: str = "", architecture: str = "") -> str:
@@ -1978,6 +2030,11 @@ async def create_otm_from_description(project_description: str, tech_stack: str 
             } for mit in mitigations
         ]
     }
+    
+    # Validate OTM data against official schema
+    is_valid, validation_message = validate_otm_data(otm_data)
+    if not is_valid:
+        return f"❌ Generated OTM failed schema validation:\n{validation_message}\n\nPlease check the project description and try again."
     
     # Save OTM file
     safe_name = "".join(c for c in project_name if c.isalnum() or c in (' ', '-', '_')).strip()
