@@ -1624,8 +1624,8 @@ async def import_otm_to_devici(otm_file_path: str, collection_name: str = "Sandb
                 otm_data["collectionId"] = target_collection_id
                 print(f"📁 Added collectionId: {target_collection_id}")
             
-            # Use the correct endpoint format: /threats/otm/{collection_id}
-            endpoint = f"/threats/otm/{target_collection_id}"
+            # Use the correct endpoint format: /threat-models/otm/{collection_id}
+            endpoint = f"/threat-models/otm/{target_collection_id}"
             print(f"POST {endpoint} (data size: {len(json.dumps(otm_data))} bytes)")
             
             try:
