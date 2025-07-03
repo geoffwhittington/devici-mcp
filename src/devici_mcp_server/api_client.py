@@ -316,7 +316,7 @@ class DeviciAPIClient:
                 }
                 
                 # Call the OTM import endpoint
-                otm_result = await self._make_request("POST", "/api/threats/otm", json_data=otm_payload)
+                otm_result = await self._make_request("POST", "/threats/otm", json_data=otm_payload)
                 
                 # Extract counts from the OTM import result
                 if isinstance(otm_result, dict):
