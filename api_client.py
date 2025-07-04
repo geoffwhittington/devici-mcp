@@ -284,10 +284,10 @@ class DeviciAPIClient:
         mitigations = otm_content.get("mitigations", [])
         
         if threats or mitigations:
-            logger.info(f"Importing {len(threats)} threats and {len(mitigations)} mitigations via /api/threats/otm endpoint")
+            logger.info(f"Importing {len(threats)} threats and {len(mitigations)} mitigations via CORRECT /threat-models/otm/{collection_id} endpoint")
             
             try:
-                # Prepare OTM data for the /api/threats/otm endpoint
+                # Prepare OTM data for the CORRECT /threat-models/otm/{collection_id} endpoint
                 # Update component IDs in threats to reference created components
                 updated_threats = []
                 for threat in threats:
@@ -315,8 +315,8 @@ class DeviciAPIClient:
                     "threatModelId": threat_model_id  # Link to our created threat model
                 }
                 
-                # Call the OTM import endpoint
-                otm_result = await self._make_request("POST", "/threats/otm", json_data=otm_payload)
+                # Call the OTM import endpoint using the ONLY CORRECT ENDPOINT
+                otm_result = await self._make_request("POST", f"/threat-models/otm/{collection_id}", json_data=otm_payload)
                 
                 # Extract counts from the OTM import result
                 if isinstance(otm_result, dict):
@@ -327,7 +327,7 @@ class DeviciAPIClient:
                     otm_errors = otm_result.get("errors", [])
                     import_summary["errors"].extend(otm_errors)
                     
-                    logger.info(f"OTM import completed via /api/threats/otm endpoint: {import_summary['threats_created']} threats, {import_summary['mitigations_created']} mitigations")
+                    logger.info(f"OTM import completed via CORRECT /threat-models/otm/{collection_id} endpoint: {import_summary['threats_created']} threats, {import_summary['mitigations_created']} mitigations")
                 else:
                     # Fallback - assume success if we get a non-dict response
                     import_summary["threats_created"] = len(threats)

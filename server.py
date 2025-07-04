@@ -135,6 +135,45 @@ mcp = FastMCP("devici-mcp-server")
 # =============================================================================
 
 @mcp.tool()
+async def debug_working_directory() -> str:
+    """Debug tool to check current working directory and file permissions"""
+    import os
+    import stat
+    
+    current_dir = os.getcwd()
+    result = f"🔍 **Debug Information:**\n\n"
+    result += f"**Current Working Directory:** {current_dir}\n"
+    result += f"**Directory exists:** {os.path.exists(current_dir)}\n"
+    result += f"**Directory writable:** {os.access(current_dir, os.W_OK)}\n"
+    result += f"**Directory readable:** {os.access(current_dir, os.R_OK)}\n"
+    
+    # List files in current directory
+    try:
+        files = os.listdir(current_dir)
+        result += f"**Files in directory:** {len(files)}\n"
+        for f in files[:10]:  # Show first 10 files
+            result += f"  - {f}\n"
+        if len(files) > 10:
+            result += f"  ... and {len(files) - 10} more files\n"
+    except Exception as e:
+        result += f"**Error listing files:** {str(e)}\n"
+    
+    # Test file creation
+    test_file = "test_write_permissions.tmp"
+    try:
+        with open(test_file, 'w') as f:
+            f.write("test")
+        if os.path.exists(test_file):
+            result += f"**Test file creation:** ✅ SUCCESS\n"
+            os.remove(test_file)  # Clean up
+        else:
+            result += f"**Test file creation:** ❌ FAILED (file not found after write)\n"
+    except Exception as e:
+        result += f"**Test file creation:** ❌ FAILED ({str(e)})\n"
+    
+    return result
+
+@mcp.tool()
 async def help_me_get_started() -> str:
     """I'm new to Devici - show me how to get started with threat modeling"""
     return """
@@ -467,89 +506,45 @@ async def generate_otm_and_create_threat_model(collection_name: str | None = Non
         }
     ]
     
-    # Create OTM structure
-    otm_data = {
-        "otmVersion": "0.1.0",
-        "project": {
-            "name": project_name,
-            "id": str(uuid.uuid4()),
-            "description": f"Threat model for {project_name} project",
-            "owner": "Security Team",
-            "ownerContact": "",
-            "tags": ["auto-generated", "llm-analysis"]
-        },
-        "representations": [
-            {
-                "name": "Architecture Overview",
-                "id": str(uuid.uuid4()),
-                "type": "threat-model",
-                "size": {
-                    "width": 1000,
-                    "height": 1000
-                }
-            }
-        ],
-        "trustZones": [
-            {
-                "id": str(uuid.uuid4()),
-                "name": tz["name"],
-                "type": tz["type"],
-                "description": tz["description"],
-                "risk": {
-                    "trustRating": 10 if "private" in tz["type"] else 3
-                }
-            } for tz in trust_zones
-        ],
-        "components": [
-            {
-                "id": str(uuid.uuid4()),
-                "name": comp["name"],
-                "type": comp["type"],
-                "description": comp["description"],
-                "tags": comp["tags"]
-            } for comp in components
-        ],
-        "dataflows": [
-            {
-                "id": str(uuid.uuid4()),
-                "name": df["name"],
-                "source": df["source"],
-                "destination": df["destination"],
-                "description": df["description"],
-                "tags": df["tags"]
-            } for df in data_flows
-        ],
-        "threats": [
-            {
-                "id": str(uuid.uuid4()),
-                "name": threat["name"],
-                "categories": [threat["category"]],
-                "description": threat["description"],
-                "risk": {
-                    "impact": threat["impact"],
-                    "impactComment": f"{threat['severity']} severity {threat['category']} threat"
-                },
-                "tags": ["stride", threat["category"]]
-            } for threat in stride_threats
-        ],
-        "mitigations": [
-            {
-                "id": str(uuid.uuid4()),
-                "name": mit["name"],
-                "description": mit["description"],
-                "riskReduction": mit["riskReduction"],
-                "tags": ["security-control"]
-            } for mit in stride_mitigations
-        ]
-    }
+    # Use centralized OTM generation function
+    otm_data, is_valid, validation_message = create_validated_otm_structure(
+        project_name=project_name,
+        project_description=f"Threat model for {project_name} project", 
+        components=components,
+        trust_zones=trust_zones,
+        data_flows=data_flows,
+        threats=stride_threats,
+        mitigations=stride_mitigations,
+        project_tags=["auto-generated", "llm-analysis"]
+    )
+    
+    if not is_valid:
+        return f"❌ Generated OTM failed validation even after auto-fix:\n{validation_message}"
     
     # Save OTM file locally
-    otm_filename = f"{project_name}-threat-model.otm"
+    safe_project_name = "".join(c for c in project_name if c.isalnum() or c in ('-', '_')).strip()
+    otm_filename = f"{safe_project_name}-threat-model.otm"
+    
+    # Ensure we're writing to the current working directory
+    current_dir = os.getcwd()
+    full_path = os.path.join(current_dir, otm_filename)
+    
     try:
-        with open(otm_filename, 'w') as f:
+        with open(full_path, 'w') as f:
             json.dump(otm_data, f, indent=2)
+        
+        # Verify file was actually created
+        if not os.path.exists(full_path):
+            return f"❌ File {full_path} was not created despite no error"
+        
+        # Get absolute path for user
+        abs_path = os.path.abspath(full_path)
+        
+        # Also log the creation for debugging
+        logger.info(f"Created OTM file: {abs_path}")
+        
     except Exception as e:
-        return f"❌ Error saving OTM file: {str(e)}"
+        return f"❌ Error saving OTM file: {str(e)}\nCurrent directory: {current_dir}\nAttempted path: {full_path}"
     
     # Now create threat model in Devici
     try:
@@ -625,7 +620,7 @@ async def generate_otm_and_create_threat_model(collection_name: str | None = Non
             return result
             
     except Exception as e:
-        return f"❌ Error creating threat model in Devici: {str(e)}\n\n✅ OTM file saved locally: {otm_filename}"
+        return f"❌ Error creating threat model in Devici: {str(e)}\n\n✅ OTM file saved locally: {otm_filename} (Full path: {abs_path})"
 
 @mcp.tool()
 async def create_otm_file_for_devici() -> str:
@@ -821,89 +816,76 @@ async def create_otm_file_for_devici() -> str:
         }
     ]
     
-    # Create OTM structure
-    otm_data = {
-        "otmVersion": "0.1.0",
-        "project": {
-            "name": project_name,
-            "id": str(uuid.uuid4()),
-            "description": f"Threat model for {project_name} project",
-            "owner": "Security Team",
-            "ownerContact": "",
-            "tags": ["auto-generated", "llm-analysis", "devici-ready"]
-        },
-        "representations": [
-            {
-                "name": "Architecture Overview",
-                "id": str(uuid.uuid4()),
-                "type": "threat-model",
-                "size": {
-                    "width": 1000,
-                    "height": 1000
-                }
-            }
-        ],
-        "trustZones": [
-            {
-                "id": str(uuid.uuid4()),
-                "name": tz["name"],
-                "type": tz["type"],
-                "description": tz["description"],
-                "risk": {
-                    "trustRating": 10 if "private" in tz["type"] else 3
-                }
-            } for tz in trust_zones
-        ],
-        "components": [
-            {
-                "id": str(uuid.uuid4()),
-                "name": comp["name"],
-                "type": comp["type"],
-                "description": comp["description"],
-                "tags": comp["tags"]
-            } for comp in components
-        ],
-        "dataflows": [
-            {
+    # Create components with UUIDs first so we can reference them in dataflows
+    components_with_ids = []
+    component_name_to_id = {}
+    
+    for comp in components:
+        comp_id = str(uuid.uuid4())
+        component_name_to_id[comp["name"]] = comp_id
+        components_with_ids.append({
+            "id": comp_id,
+            "name": comp["name"],
+            "type": comp["type"],
+            "description": comp["description"],
+            "tags": comp["tags"]
+        })
+    
+    # Fix dataflows to use component IDs instead of names
+    dataflows_with_ids = []
+    for df in data_flows:
+        source_id = component_name_to_id.get(df["source"])
+        dest_id = component_name_to_id.get(df["destination"])
+        
+        if source_id and dest_id:  # Only add dataflow if both components exist
+            dataflows_with_ids.append({
                 "id": str(uuid.uuid4()),
                 "name": df["name"],
-                "source": df["source"],
-                "destination": df["destination"],
+                "source": source_id,
+                "destination": dest_id,
                 "description": df["description"],
                 "tags": df["tags"]
-            } for df in data_flows
-        ],
-        "threats": [
-            {
-                "id": str(uuid.uuid4()),
-                "name": threat["name"],
-                "categories": [threat["category"]],
-                "description": threat["description"],
-                "risk": {
-                    "impact": threat["impact"],
-                    "impactComment": f"{threat['severity']} severity {threat['category']} threat"
-                },
-                "tags": ["stride", threat["category"]]
-            } for threat in stride_threats
-        ],
-        "mitigations": [
-            {
-                "id": str(uuid.uuid4()),
-                "name": mit["name"],
-                "description": mit["description"],
-                "riskReduction": mit["riskReduction"],
-                "tags": ["security-control"]
-            } for mit in stride_mitigations
-        ]
-    }
+            })
+    
+    # Use centralized OTM generation function
+    otm_data, is_valid, validation_message = create_validated_otm_structure(
+        project_name=project_name,
+        project_description=f"Threat model for {project_name} project",
+        components=components,
+        trust_zones=trust_zones,
+        data_flows=data_flows,
+        threats=stride_threats,
+        mitigations=stride_mitigations,
+        project_tags=["auto-generated", "llm-analysis", "devici-ready"]
+    )
+    
+    if not is_valid:
+        return f"❌ Generated OTM failed validation even after auto-fix:\n{validation_message}"
     
     # Save OTM file locally
-    otm_filename = f"{project_name}-devici-ready.otm"
+    safe_project_name = "".join(c for c in project_name if c.isalnum() or c in ('-', '_')).strip()
+    otm_filename = f"{safe_project_name}-devici-ready.otm"
+    
+    # Ensure we're writing to the current working directory
+    current_dir = os.getcwd()
+    full_path = os.path.join(current_dir, otm_filename)
+    
     try:
-        with open(otm_filename, 'w') as f:
+        with open(full_path, 'w') as f:
             json.dump(otm_data, f, indent=2)
+        
+        # Verify file was actually created
+        if not os.path.exists(full_path):
+            return f"❌ File {full_path} was not created despite no error"
+        
+        # Get absolute path for user
+        abs_path = os.path.abspath(full_path)
+        
+        # Also log the creation for debugging
+        logger.info(f"Created OTM file: {abs_path}")
+        
     except Exception as e:
-        return f"❌ Error saving OTM file: {str(e)}"
+        return f"❌ Error saving OTM file: {str(e)}\nCurrent directory: {current_dir}\nAttempted path: {full_path}"
     
     # Generate summary
     result = f"""
@@ -911,6 +893,7 @@ async def create_otm_file_for_devici() -> str:
 
 **📄 File Generated:**
 - 📁 File: `{otm_filename}`
+- 📂 Full Path: `{abs_path}`
 - 🏗️ Components: {len(components)}
 - 🛡️ Trust Zones: {len(trust_zones)}
 - ⚠️ Threats: {len(stride_threats)} (STRIDE methodology)
@@ -966,10 +949,13 @@ async def import_otm_to_devici(otm_file_path: str, collection_name: str = "Sandb
         with open(otm_file_path, 'r') as f:
             otm_data = json.load(f)
         
-        # Validate OTM data against official schema
-        is_valid, validation_message = validate_otm_data(otm_data)
+        # Validate and auto-fix OTM data against official schema
+        fixed_otm_data, is_valid, validation_message = validate_and_fix_otm_data(otm_data)
         if not is_valid:
-            return f"❌ OTM file failed schema validation:\n{validation_message}\n\nPlease ensure the file conforms to the Open Threat Model standard."
+            return f"❌ OTM file failed schema validation even after auto-fix:\n{validation_message}\n\nPlease ensure the file conforms to the Open Threat Model standard."
+        
+        # Use the fixed data for everything going forward
+        otm_data = fixed_otm_data
         
         project_name = otm_data.get('project', {}).get('name', 'Unknown')
         print(f"✅ Loaded OTM file: {otm_file_path}")
@@ -1011,13 +997,10 @@ async def import_otm_to_devici(otm_file_path: str, collection_name: str = "Sandb
                 otm_data["collectionId"] = target_collection_id
                 print(f"📁 Added collectionId: {target_collection_id}")
             
-            # Use the correct endpoint format: /threat-models/otm/{collection_id}
-            endpoint = f"/threat-models/otm/{target_collection_id}"
-            print(f"POST {endpoint} (data size: {len(json.dumps(otm_data))} bytes)")
-            
+            # Use reusable _make_request function for the ONLY CORRECT ENDPOINT
             try:
-                result = await client._make_request("POST", endpoint, json_data=otm_data)
-                print(f"✅ OTM import successful!")
+                result = await client._make_request("POST", f"/threat-models/otm/{target_collection_id}", json_data=otm_data)
+                print("✅ OTM import successful!")
                 
                 # Parse response for summary
                 components_created = len(otm_data.get("components", []))
@@ -1076,9 +1059,9 @@ Share these URLs with your team:
                 
                 return result_text
                 
-            except Exception as api_error:
-                print(f"❌ OTM import failed: {api_error}")
-                return f"❌ Error importing OTM to Devici: {str(api_error)}"
+            except Exception as e:
+                print(f"❌ Error importing OTM: {e}")
+                return f"❌ Error importing OTM: {str(e)}"
             
     except Exception as e:
         return f"❌ Error importing OTM file: {str(e)}"
@@ -1122,9 +1105,187 @@ def validate_otm_data(otm_data: dict) -> tuple[bool, str]:
     except Exception as e:
         return True, f"⚠️ Schema validation skipped due to error: {e}"
 
+def validate_and_fix_otm_data(otm_data: dict) -> tuple[dict, bool, str]:
+    """
+    Validate OTM data and automatically fix common issues.
+    Returns (fixed_otm_data, is_valid, message)
+    """
+    import copy
+    import uuid
+    
+    # Create a deep copy to avoid modifying the original
+    fixed_data = copy.deepcopy(otm_data)
+    fixes_applied = []
+    
+    # Fix 1: Ensure components have required parent field
+    if "components" in fixed_data and fixed_data["components"]:
+        # Get the first trust zone ID as default parent
+        default_trust_zone = None
+        if "trustZones" in fixed_data and fixed_data["trustZones"]:
+            default_trust_zone = fixed_data["trustZones"][0]["id"]
+        
+        for component in fixed_data["components"]:
+            if "parent" not in component:
+                if default_trust_zone:
+                    component["parent"] = {"trustZone": default_trust_zone}
+                    fixes_applied.append(f"Added missing parent to component: {component.get('name', 'unnamed')}")
+                else:
+                    # Create a default trust zone if none exists
+                    if "trustZones" not in fixed_data:
+                        fixed_data["trustZones"] = []
+                    
+                    default_tz_id = str(uuid.uuid4())
+                    fixed_data["trustZones"].append({
+                        "id": default_tz_id,
+                        "name": "Default Zone",
+                        "type": "default",
+                        "description": "Auto-generated default trust zone",
+                        "risk": {"trustRating": 50}
+                    })
+                    component["parent"] = {"trustZone": default_tz_id}
+                    fixes_applied.append(f"Created default trust zone and assigned to component: {component.get('name', 'unnamed')}")
+    
+    # Fix 2: Fix threat risk fields (impact must be number, likelihood required)
+    if "threats" in fixed_data and fixed_data["threats"]:
+        for threat in fixed_data["threats"]:
+            if "risk" in threat:
+                risk = threat["risk"]
+                
+                # Fix impact: convert string to number
+                if "impact" in risk and isinstance(risk["impact"], str):
+                    impact_map = {"Low": 25, "Medium": 50, "High": 75, "Critical": 100}
+                    old_impact = risk["impact"]
+                    risk["impact"] = impact_map.get(old_impact, 50)
+                    fixes_applied.append(f"Fixed threat impact: '{old_impact}' → {risk['impact']}")
+                elif "impact" not in risk:
+                    risk["impact"] = 50
+                    fixes_applied.append(f"Added missing impact to threat: {threat.get('name', 'unnamed')}")
+                
+                # Add missing likelihood
+                if "likelihood" not in risk:
+                    risk["likelihood"] = 50  # Default medium likelihood
+                    fixes_applied.append(f"Added missing likelihood to threat: {threat.get('name', 'unnamed')}")
+    
+    # Fix 3: Convert dataflow source/destination from names to UUIDs
+    if "components" in fixed_data and "dataflows" in fixed_data:
+        # Create a mapping from component names to UUIDs
+        name_to_id = {}
+        for component in fixed_data["components"]:
+            if "name" in component and "id" in component:
+                name_to_id[component["name"]] = component["id"]
+        
+        # Fix dataflows
+        for dataflow in fixed_data["dataflows"]:
+            if "source" in dataflow and "destination" in dataflow:
+                # Check if source/destination are names (not UUIDs)
+                source = dataflow["source"]
+                destination = dataflow["destination"]
+                
+                # If source is a component name, convert to UUID
+                if source in name_to_id:
+                    dataflow["source"] = name_to_id[source]
+                    fixes_applied.append(f"Fixed dataflow source '{source}' → UUID")
+                
+                # If destination is a component name, convert to UUID  
+                if destination in name_to_id:
+                    dataflow["destination"] = name_to_id[destination]
+                    fixes_applied.append(f"Fixed dataflow destination '{destination}' → UUID")
+    
+    # Fix 4: Ensure all required UUIDs are present and valid
+    # Fix project ID if missing
+    if "project" in fixed_data:
+        if "id" not in fixed_data["project"] or not fixed_data["project"]["id"]:
+            fixed_data["project"]["id"] = str(uuid.uuid4())
+            fixes_applied.append("Added missing project ID")
+    
+    # Fix component IDs if missing
+    if "components" in fixed_data:
+        for component in fixed_data["components"]:
+            if "id" not in component or not component["id"]:
+                component["id"] = str(uuid.uuid4())
+                fixes_applied.append(f"Added missing ID for component '{component.get('name', 'Unknown')}'")
+    
+    # Fix dataflow IDs if missing
+    if "dataflows" in fixed_data:
+        for dataflow in fixed_data["dataflows"]:
+            if "id" not in dataflow or not dataflow["id"]:
+                dataflow["id"] = str(uuid.uuid4())
+                fixes_applied.append(f"Added missing ID for dataflow '{dataflow.get('name', 'Unknown')}'")
+    
+    # Fix threat IDs if missing
+    if "threats" in fixed_data:
+        for threat in fixed_data["threats"]:
+            if "id" not in threat or not threat["id"]:
+                threat["id"] = str(uuid.uuid4())
+                fixes_applied.append(f"Added missing ID for threat '{threat.get('name', 'Unknown')}'")
+    
+    # Fix mitigation IDs if missing
+    if "mitigations" in fixed_data:
+        for mitigation in fixed_data["mitigations"]:
+            if "id" not in mitigation or not mitigation["id"]:
+                mitigation["id"] = str(uuid.uuid4())
+                fixes_applied.append(f"Added missing ID for mitigation '{mitigation.get('name', 'Unknown')}'")
+    
+    # Fix trust zone IDs if missing
+    if "trustZones" in fixed_data:
+        for trust_zone in fixed_data["trustZones"]:
+            if "id" not in trust_zone or not trust_zone["id"]:
+                trust_zone["id"] = str(uuid.uuid4())
+                fixes_applied.append(f"Added missing ID for trust zone '{trust_zone.get('name', 'Unknown')}'")
+    
+    # Fix representation IDs if missing
+    if "representations" in fixed_data:
+        for representation in fixed_data["representations"]:
+            if "id" not in representation or not representation["id"]:
+                representation["id"] = str(uuid.uuid4())
+                fixes_applied.append(f"Added missing ID for representation '{representation.get('name', 'Unknown')}'")
+    
+    # Now validate the fixed data
+    is_valid, validation_message = validate_otm_data(fixed_data)
+    
+    # Create comprehensive message
+    if fixes_applied:
+        fix_summary = f"🔧 Auto-fixes applied:\n" + "\n".join(f"   • {fix}" for fix in fixes_applied)
+        if is_valid:
+            message = f"{fix_summary}\n\n✅ OTM data is now valid after auto-fixing"
+        else:
+            message = f"{fix_summary}\n\n❌ OTM data still invalid after auto-fixing:\n{validation_message}"
+    else:
+        if is_valid:
+            message = "✅ OTM data is valid (no fixes needed)"
+        else:
+            message = f"❌ OTM data is invalid and no auto-fixes were applicable:\n{validation_message}"
+    
+    return fixed_data, is_valid, message
+
 @mcp.tool()
-async def create_otm_from_description(project_description: str, tech_stack: str = "", architecture: str = "") -> str:
-    """Create an OTM file based on your description - no file scanning, LLM-powered analysis"""
+async def create_otm_from_description(
+    project_description: str, 
+    tech_stack: str = "", 
+    architecture: str = "", 
+    import_to_devici: bool = True, 
+    collection_name: str = "AI Generated Models"
+) -> str:
+    """
+    Create an OTM file based on detailed architectural information.
+    
+    For accurate threat modeling, provide:
+    
+    project_description: Detailed description including:
+        - What components exist (e.g., "web server", "database", "API gateway", "mobile app")
+        - How they connect (e.g., "mobile app calls API gateway which queries database")
+        - What data flows between them (e.g., "user credentials", "payment data", "file uploads")
+        - Trust boundaries (e.g., "mobile app is in user device, API in private cloud")
+    
+    tech_stack: Specific technologies used (e.g., "React, Node.js, PostgreSQL, AWS Lambda")
+    
+    architecture: Architecture pattern (e.g., "3-tier web app", "microservices", "serverless", "mobile + API")
+    
+    Examples:
+    - "Web application with React frontend, Node.js API server, PostgreSQL database. Users authenticate via OAuth2, upload files to S3, and process payments via Stripe API."
+    - "Mobile iOS app that connects to REST API gateway, which calls Lambda functions that read/write to DynamoDB and send notifications via SNS."
+    - "MCP server with AI assistant client connecting via MCP protocol to Python FastMCP server, which authenticates with OAuth2 and calls Devici REST API, plus reads/writes OTM files locally."
+    """
     import json
     import uuid
     from datetime import datetime
@@ -1145,89 +1306,233 @@ async def create_otm_from_description(project_description: str, tech_stack: str 
     elif any(word in desc_lower for word in ['web', 'website', 'frontend', 'react', 'vue', 'angular']):
         project_type = "web-application"
     
-    # Generate components based on description
+    # Generate components based on explicit architectural description
     components = []
     trust_zones = []
     data_flows = []
     
-    # Frontend detection
-    if any(word in desc_lower or word in tech_lower for word in ['react', 'vue', 'angular', 'frontend', 'web', 'browser', 'ui']):
-        components.append({
-            "name": "Web Frontend",
-            "type": "web-application", 
-            "description": "User interface layer handling client interactions",
-            "tags": ["frontend", "ui", "client-side"]
-        })
-        trust_zones.append({
-            "name": "Client Browser",
-            "type": "b2c-web-application",
-            "description": "User's web browser environment"
-        })
+    # Check for MCP architecture first (highest priority)
+    is_mcp_project = ('mcp' in desc_lower and ('server' in desc_lower or 'protocol' in desc_lower)) or 'fastmcp' in tech_lower
     
-    # Backend/API detection
-    if any(word in desc_lower or word in tech_lower for word in ['api', 'backend', 'server', 'node', 'python', 'java', 'go', 'rust', 'php']):
-        backend_name = "API Server"
-        if 'microservice' in desc_lower:
-            backend_name = "Microservices"
-        elif 'serverless' in desc_lower:
-            backend_name = "Serverless Functions"
+    if is_mcp_project:
+        # MCP-specific architecture
+        components.append({
+            "name": "AI Assistant Client",
+            "type": "external-entity",
+            "description": "AI assistant (Claude, Cursor, etc.) that connects via MCP protocol",
+            "tags": ["ai", "client", "mcp", "external"]
+        })
+        
+        components.append({
+            "name": "MCP Server",
+            "type": "process",
+            "description": "FastMCP Python server handling MCP protocol requests and business logic",
+            "tags": ["mcp", "server", "protocol", "python", "core"]
+        })
+        
+        if 'oauth' in desc_lower or 'auth' in desc_lower:
+            components.append({
+                "name": "Authentication Service",
+                "type": "process",
+                "description": "OAuth2 authentication handler for external API access",
+                "tags": ["oauth", "authentication", "security"]
+            })
+        
+        components.append({
+            "name": "API Client",
+            "type": "process",
+            "description": "HTTP client component for making REST API calls",
+            "tags": ["api", "client", "http", "rest"]
+        })
+        
+        if 'devici' in desc_lower or 'external' in desc_lower or 'platform' in desc_lower:
+            components.append({
+                "name": "External API Service",
+                "type": "external-service",
+                "description": "External REST API service (Devici platform or similar)",
+                "tags": ["external", "api", "rest", "cloud"]
+            })
+        
+        if 'file' in desc_lower or 'otm' in desc_lower or 'local' in desc_lower:
+            components.append({
+                "name": "File System",
+                "type": "datastore",
+                "description": "Local file system for reading/writing OTM files and project data",
+                "tags": ["filesystem", "storage", "otm", "local"]
+            })
+        
+        # MCP trust zones
+        trust_zones.extend([
+            {
+                "name": "AI Client Environment",
+                "type": "b2c-web-application",
+                "description": "External AI assistant client environment"
+            },
+            {
+                "name": "MCP Server Environment", 
+                "type": "private-secured",
+                "description": "Local MCP server and processing environment"
+            },
+            {
+                "name": "External Services",
+                "type": "public-cloud",
+                "description": "External API endpoints and cloud services"
+            }
+        ])
+    
+    else:
+        # Non-MCP architectures - explicit component detection
+        
+        # Frontend detection
+        if any(word in desc_lower or word in tech_lower for word in ['react', 'vue', 'angular', 'frontend', 'web', 'browser', 'ui', 'mobile', 'ios', 'android']):
+            frontend_type = "mobile-app" if any(word in desc_lower or word in tech_lower for word in ['mobile', 'ios', 'android', 'app']) else "web-application"
+            frontend_name = "Mobile App" if frontend_type == "mobile-app" else "Web Frontend"
             
-        components.append({
-            "name": backend_name,
-            "type": "web-service",
-            "description": "Backend services handling business logic and data processing",
-            "tags": ["backend", "api", "server"]
-        })
-        trust_zones.append({
-            "name": "Application Server",
-            "type": "private-secured", 
-            "description": "Internal application server environment"
-        })
+            components.append({
+                "name": frontend_name,
+                "type": frontend_type,
+                "description": "User interface layer handling client interactions",
+                "tags": ["frontend", "ui", "client-side"]
+            })
+            trust_zones.append({
+                "name": "Client Environment",
+                "type": "b2c-web-application",
+                "description": "User's device/browser environment"
+            })
+        
+        # Backend/API detection
+        if any(word in desc_lower or word in tech_lower for word in ['api', 'backend', 'server', 'node', 'python', 'java', 'go', 'rust', 'php', 'lambda', 'function']):
+            backend_name = "API Server"
+            if 'microservice' in desc_lower:
+                backend_name = "Microservices"
+            elif 'serverless' in desc_lower or 'lambda' in desc_lower:
+                backend_name = "Serverless Functions"
+            elif 'gateway' in desc_lower:
+                backend_name = "API Gateway"
+                
+            components.append({
+                "name": backend_name,
+                "type": "web-service",
+                "description": "Backend services handling business logic and data processing",
+                "tags": ["backend", "api", "server"]
+            })
+            trust_zones.append({
+                "name": "Application Server",
+                "type": "private-secured", 
+                "description": "Internal application server environment"
+            })
+        
+        # Database detection - only if explicitly mentioned with storage context
+        db_keywords = ['database', 'db', 'sql', 'mongo', 'postgres', 'mysql', 'redis', 'dynamodb', 'storage']
+        if any(word in desc_lower or word in tech_lower for word in db_keywords):
+            db_type = "SQL Database"
+            if any(word in desc_lower or word in tech_lower for word in ['mongo', 'nosql', 'document', 'dynamodb']):
+                db_type = "NoSQL Database"
+            elif any(word in desc_lower or word in tech_lower for word in ['redis', 'cache']):
+                db_type = "Cache Layer"
+                
+            components.append({
+                "name": db_type,
+                "type": "datastore",
+                "description": "Data persistence and storage layer",
+                "tags": ["database", "storage", "persistence"]
+            })
+            trust_zones.append({
+                "name": "Database Layer",
+                "type": "private-secured",
+                "description": "Secured database environment"
+            })
+        
+        # External services detection
+        if any(word in desc_lower for word in ['stripe', 'paypal', 'payment', 'third-party', 'external', 'integration', 'sns', 's3', 'aws']):
+            components.append({
+                "name": "External Services",
+                "type": "external-service",
+                "description": "Third-party services and integrations",
+                "tags": ["external", "third-party", "integration"]
+            })
+            trust_zones.append({
+                "name": "External Services",
+                "type": "public-cloud",
+                "description": "External third-party service providers"
+            })
     
-    # Database detection
-    if any(word in desc_lower or word in tech_lower for word in ['database', 'db', 'sql', 'mongo', 'postgres', 'mysql', 'redis', 'storage', 'data']):
-        db_type = "SQL Database"
-        if any(word in desc_lower or word in tech_lower for word in ['mongo', 'nosql', 'document']):
-            db_type = "NoSQL Database"
-        elif any(word in desc_lower or word in tech_lower for word in ['redis', 'cache']):
-            db_type = "Cache Layer"
-            
-        components.append({
-            "name": db_type,
-            "type": "datastore",
-            "description": "Data persistence and storage layer",
-            "tags": ["database", "storage", "persistence"]
-        })
-        trust_zones.append({
-            "name": "Database Layer",
-            "type": "private-secured",
-            "description": "Secured database environment"
-        })
-    
-    # External services detection
-    if any(word in desc_lower for word in ['payment', 'stripe', 'paypal', 'third-party', 'external', 'integration']):
-        components.append({
-            "name": "External Services",
-            "type": "external-service",
-            "description": "Third-party services and integrations",
-            "tags": ["external", "third-party", "integration"]
-        })
-        trust_zones.append({
-            "name": "External Services",
-            "type": "public-cloud",
-            "description": "External third-party service providers"
-        })
+
     
     # Generate data flows between components
     if len(components) >= 2:
-        for i in range(len(components) - 1):
-            data_flows.append({
-                "name": f"{components[i]['name']} → {components[i+1]['name']}",
-                "source": components[i]['name'],
-                "destination": components[i+1]['name'],
-                "description": f"Data communication between {components[i]['name']} and {components[i+1]['name']}",
-                "tags": ["data-flow"]
-            })
+        # MCP-specific data flows
+        if 'mcp' in desc_lower and 'server' in desc_lower:
+            # Create logical MCP protocol flows
+            ai_client = next((c for c in components if "AI Assistant" in c["name"]), None)
+            mcp_server = next((c for c in components if "MCP Server" in c["name"]), None)
+            auth_service = next((c for c in components if "Authentication" in c["name"]), None)
+            api_client = next((c for c in components if "API Client" in c["name"]), None)
+            external_api = next((c for c in components if "External API" in c["name"]), None)
+            file_system = next((c for c in components if "File System" in c["name"]), None)
+            
+            if ai_client and mcp_server:
+                data_flows.append({
+                    "name": "MCP Protocol Communication",
+                    "source": ai_client["name"],
+                    "destination": mcp_server["name"],
+                    "description": "MCP protocol requests and responses between AI assistant and server",
+                    "tags": ["mcp", "protocol", "bidirectional"]
+                })
+            
+            if mcp_server and auth_service:
+                data_flows.append({
+                    "name": "Authentication Request",
+                    "source": mcp_server["name"],
+                    "destination": auth_service["name"],
+                    "description": "OAuth2 authentication requests for API access",
+                    "tags": ["oauth", "authentication"]
+                })
+            
+            if auth_service and api_client:
+                data_flows.append({
+                    "name": "Authenticated API Calls",
+                    "source": auth_service["name"],
+                    "destination": api_client["name"],
+                    "description": "API calls with authenticated tokens",
+                    "tags": ["api", "authenticated"]
+                })
+            elif mcp_server and api_client:
+                data_flows.append({
+                    "name": "API Request Processing",
+                    "source": mcp_server["name"],
+                    "destination": api_client["name"],
+                    "description": "Processing API requests and responses",
+                    "tags": ["api", "processing"]
+                })
+            
+            if api_client and external_api:
+                data_flows.append({
+                    "name": "REST API Calls",
+                    "source": api_client["name"],
+                    "destination": external_api["name"],
+                    "description": "HTTP REST API calls to external service",
+                    "tags": ["rest", "http", "external"]
+                })
+            
+            if mcp_server and file_system:
+                data_flows.append({
+                    "name": "File Operations",
+                    "source": mcp_server["name"],
+                    "destination": file_system["name"],
+                    "description": "Reading and writing OTM files and project data",
+                    "tags": ["file", "otm", "storage"]
+                })
+        else:
+            # Generic data flows for non-MCP projects
+            for i in range(len(components) - 1):
+                data_flows.append({
+                    "name": f"{components[i]['name']} → {components[i+1]['name']}",
+                    "source": components[i]['name'],
+                    "destination": components[i+1]['name'],
+                    "description": f"Data communication between {components[i]['name']} and {components[i+1]['name']}",
+                    "tags": ["data-flow"]
+                })
     
     # Enhanced STRIDE threats based on project characteristics
     threats = []
@@ -1363,100 +1668,103 @@ async def create_otm_from_description(project_description: str, tech_stack: str 
                 project_name = word.capitalize()
                 break
     
-    # Create OTM structure
-    otm_data = {
-        "otmVersion": "0.1.0",
-        "project": {
-            "name": project_name,
+    # Create OTM structure with schema compliance
+    
+    # Build trust zones first and capture IDs
+    trust_zone_data = []
+    for tz in trust_zones:
+        trust_zone_data.append({
             "id": str(uuid.uuid4()),
-            "description": project_description,
-            "owner": "Security Team",
-            "ownerContact": "",
-            "tags": ["llm-generated", "conversation-based", "devici-ready"]
-        },
-        "representations": [
-            {
-                "name": "Architecture Overview",
-                "id": str(uuid.uuid4()),
-                "type": "threat-model",
-                "size": {"width": 1000, "height": 1000}
-            }
-        ],
-        "trustZones": [
-            {
-                "id": str(uuid.uuid4()),
-                "name": tz["name"],
-                "type": tz["type"], 
-                "description": tz["description"],
-                "risk": {"trustRating": 10 if "private" in tz["type"] else 3}
-            } for tz in trust_zones
-        ],
-        "components": [
-            {
-                "id": str(uuid.uuid4()),
-                "name": comp["name"],
-                "type": comp["type"],
-                "description": comp["description"], 
-                "tags": comp["tags"]
-            } for comp in components
-        ],
-        "dataflows": [
-            {
-                "id": str(uuid.uuid4()),
-                "name": df["name"],
-                "source": df["source"],
-                "destination": df["destination"],
-                "description": df["description"],
-                "tags": df["tags"]
-            } for df in data_flows
-        ],
-        "threats": [
-            {
-                "id": str(uuid.uuid4()),
-                "name": threat["name"],
-                "categories": [threat["category"]],
-                "description": threat["description"],
-                "risk": {
-                    "impact": threat["impact"],
-                    "impactComment": f"{threat['severity']} severity {threat['category']} threat"
-                },
-                "tags": ["stride", threat["category"]]
-            } for threat in threats
-        ],
-        "mitigations": [
-            {
-                "id": str(uuid.uuid4()),
-                "name": mit["name"],
-                "description": mit["description"],
-                "riskReduction": mit["riskReduction"],
-                "tags": ["security-control"]
-            } for mit in mitigations
-        ]
-    }
+            "name": tz["name"],
+            "type": tz["type"], 
+            "description": tz["description"],
+            "risk": {"trustRating": 10 if "private" in tz["type"] else 3}
+        })
     
-    # Validate OTM data against official schema
-    is_valid, validation_message = validate_otm_data(otm_data)
+    # Ensure we have at least one trust zone
+    if not trust_zone_data:
+        trust_zone_data.append({
+            "id": str(uuid.uuid4()),
+            "name": "Default Zone",
+            "type": "default",
+            "description": "Auto-generated default trust zone",
+            "risk": {"trustRating": 50}
+        })
+    
+    # Get the first trust zone ID for components
+    default_trust_zone_id = trust_zone_data[0]["id"]
+    
+    # Build components with required parent field
+    component_data = []
+    component_name_to_id = {}
+    for comp in components:
+        comp_id = str(uuid.uuid4())
+        component_name_to_id[comp["name"]] = comp_id
+        component_data.append({
+            "id": comp_id,
+            "name": comp["name"],
+            "type": comp["type"],
+            "description": comp["description"], 
+            "tags": comp["tags"],
+            "parent": {"trustZone": default_trust_zone_id}
+        })
+    
+    # Build dataflows with component UUIDs instead of names
+    dataflow_data = []
+    for df in data_flows:
+        source_id = component_name_to_id.get(df["source"], list(component_name_to_id.values())[0] if component_name_to_id else str(uuid.uuid4()))
+        dest_id = component_name_to_id.get(df["destination"], list(component_name_to_id.values())[1] if len(component_name_to_id) > 1 else str(uuid.uuid4()))
+        
+        dataflow_data.append({
+            "id": str(uuid.uuid4()),
+            "name": df["name"],
+            "source": source_id,
+            "destination": dest_id,
+            "description": df["description"],
+            "tags": df["tags"]
+        })
+    
+    # Build threats with numeric risk values
+    severity_to_impact = {"Low": 25, "Medium": 50, "High": 75, "Critical": 100}
+    likelihood_map = {"Low": 25, "Medium": 50, "High": 75, "Critical": 100}
+    
+    threat_data = []
+    for threat in threats:
+        threat_data.append({
+            "id": str(uuid.uuid4()),
+            "name": threat["name"],
+            "categories": [threat["category"]],
+            "description": threat["description"],
+            "risk": {
+                "impact": severity_to_impact.get(threat["impact"], 50),
+                "likelihood": likelihood_map.get(threat["likelihood"], 50),
+                "impactComment": f"{threat['severity']} severity {threat['category']} threat"
+            },
+            "tags": ["stride", threat["category"]]
+        })
+    
+    # Use centralized OTM generation function
+    otm_data, is_valid, validation_message = create_validated_otm_structure(
+        project_name=project_name,
+        project_description=project_description,
+        components=components,
+        trust_zones=trust_zones,
+        data_flows=data_flows,
+        threats=threats,
+        mitigations=mitigations,
+        project_tags=["llm-generated", "conversation-based", "devici-ready"]
+    )
+    
     if not is_valid:
-        return f"❌ Generated OTM failed schema validation:\n{validation_message}\n\nPlease check the project description and try again."
-    
-    # Save OTM file
-    safe_name = "".join(c for c in project_name if c.isalnum() or c in (' ', '-', '_')).strip()
-    otm_filename = f"{safe_name.replace(' ', '-').lower()}-threat-model.otm"
-    
-    try:
-        with open(otm_filename, 'w') as f:
-            json.dump(otm_data, f, indent=2)
-    except Exception as e:
-        return f"❌ Error saving OTM file: {str(e)}"
+        return f"❌ Generated OTM failed validation even after auto-fix:\n{validation_message}\n\nPlease check the project description and try again."
     
     # Generate summary
     result = f"""
-🎯 **LLM-Generated OTM Created!**
+🎯 **LLM-Generated Threat Model**
 
 **📋 Project Analysis:**
 - 📄 Name: {project_name}
 - 🏷️ Type: {project_type.replace('-', ' ').title()}
-- 📁 File: `{otm_filename}`
 
 **🏗️ Architecture Detected:**
 """
@@ -1482,16 +1790,108 @@ async def create_otm_from_description(project_description: str, tech_stack: str 
     if len(mitigations) > 5:
         result += f"   • ... and {len(mitigations) - 5} more\n"
     
-    result += f"""
-**🚀 Zero-Friction Import:**
-1. **Open Devici** → Go to your collection
-2. **Import OTM** → Upload `{otm_filename}`
-3. **Customize** → Add project-specific details
-4. **Share** → Collaborate with security team
+    # Import to Devici if requested
+    if import_to_devici:
+        try:
+            async with create_client_from_env() as client:
+                # Get or create collection
+                collections_result = await client.get_collections(limit=50, page=0)
+                collections_data = collections_result.get('items', []) if isinstance(collections_result, dict) else []
+                
+                target_collection_id = None
+                for collection in collections_data:
+                    if collection.get("title", "").lower() == collection_name.lower():
+                        target_collection_id = collection["id"]
+                        break
+                
+                if not target_collection_id:
+                    # Create new collection
+                    collection_data = {"title": collection_name, "description": f"Auto-created for {project_name}"}
+                    new_collection = await client.create_collection(collection_data)
+                    target_collection_id = new_collection.get("id")
+                
+                # Log the payload for debugging
+                logger.info(f"Importing OTM data with {len(otm_data.get('components', []))} components")
+                
+                # Import OTM using reusable _make_request function for the ONLY CORRECT ENDPOINT
+                logger.info(f"Collection ID: {target_collection_id}")
+                logger.info(f"Payload size: {len(json.dumps(otm_data))} bytes")
+                
+                response_json = await client._make_request("POST", f"/threat-models/otm/{target_collection_id}", json_data=otm_data)
+                threat_model_id = response_json.get("id")
+                
+                # Generate Mermaid visualization
+                mermaid_diagram = f"""graph TD
+    %% {project_name} - Architecture Overview
 
-✅ **Secure & Sound**: No file system access required!
-💬 **LLM-Powered**: Generated from your conversation context
-🏢 **Enterprise Ready**: Professional OTM format
+"""
+                
+                for i, tz in enumerate(trust_zones):
+                    mermaid_diagram += f'    subgraph TZ{i}["{tz["name"]}<br/>({tz["type"]})"]\n    end\n\n'
+                
+                for i, comp in enumerate(components):
+                    mermaid_diagram += f'    C{i}[("{comp["name"]}<br/>{comp["type"]}")]\n'
+                
+                mermaid_diagram += "\n"
+                for df in data_flows:
+                    src_idx = next((i for i, c in enumerate(components) if c["name"] == df["source"]), 0)
+                    dst_idx = next((i for i, c in enumerate(components) if c["name"] == df["destination"]), 1)
+                    mermaid_diagram += f'    C{src_idx} -->|{df["name"]}| C{dst_idx}\n'
+                
+                mermaid_diagram += """
+    %% Styling
+    classDef webApp fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    classDef datastore fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef external fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    classDef process fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+
+"""
+                for i, comp in enumerate(components):
+                    if comp["type"] == "web-application" or comp["type"] == "web-service":
+                        mermaid_diagram += f"    class C{i} webApp\n"
+                    elif comp["type"] == "datastore":
+                        mermaid_diagram += f"    class C{i} datastore\n"
+                    elif comp["type"] == "external-service":
+                        mermaid_diagram += f"    class C{i} external\n"
+                    else:
+                        mermaid_diagram += f"    class C{i} process\n"
+                
+                # URLs
+                base_url_app = "https://app.devici.com"
+                collection_url = f"{base_url_app}/collections/{target_collection_id}"
+                threat_model_url = f"{base_url_app}/collections/{target_collection_id}/d/{threat_model_id}" if threat_model_id else None
+                
+                result += f"""
+**✅ IMPORTED TO DEVICI!**
+
+**🔗 INSTANT ACCESS:**
+- **Collection:** [{collection_url}]({collection_url})"""
+                if threat_model_url:
+                    result += f"""
+- **Threat Model:** [{threat_model_url}]({threat_model_url})"""
+                
+                result += f"""
+
+**📊 Architecture Visualization:**
+
+```mermaid
+{mermaid_diagram}
+```
+
+**🚨 STRIDE Threats Generated:** {len(threats)}
+**🛡️ Security Controls:** {len(mitigations)}
+"""
+                    
+                # Success case - response_json contains the data
+                    
+        except Exception as e:
+            result += f"""
+**❌ Import Error:** {str(e)}
+"""
+    else:
+        result += f"""
+**📊 Threat Model Generated**
+**🚀 Use import_to_devici=true to upload to Devici**
 """
     
     return result
@@ -1825,8 +2225,12 @@ async def create_developer_threat_model(
     
     Args:
         project_name: Name of your project/application
-        project_description: Brief description of what your app does
-        tech_stack: Technologies used (e.g., "React, Node.js, PostgreSQL")
+        project_description: Detailed architecture description including:
+            - Components (frontend, backend, database, external services)
+            - Data flows (how components communicate)
+            - Trust boundaries (what's internal vs external)
+            Example: "React frontend calls Node.js API which queries PostgreSQL database and integrates with Stripe for payments"
+        tech_stack: Specific technologies (e.g., "React, Node.js, PostgreSQL, Stripe API")
         collection_name: Devici collection to organize your threat models
     """
     import json
@@ -2041,80 +2445,20 @@ async def create_developer_threat_model(
             })
         
         # Create OTM structure
-        otm_data = {
-            "otmVersion": "0.1.0",
-            "project": {
-                "name": project_name,
-                "id": str(uuid.uuid4()),
-                "description": project_description,
-                "owner": "Development Team",
-                "ownerContact": "",
-                "tags": ["developer-generated", "security-discussion", "devici-ready"]
-            },
-            "representations": [
-                {
-                    "name": "Architecture Overview",
-                    "id": str(uuid.uuid4()),
-                    "type": "threat-model",
-                    "size": {"width": 1000, "height": 1000}
-                }
-            ],
-            "trustZones": [
-                {
-                    "id": str(uuid.uuid4()),
-                    "name": tz["name"],
-                    "type": tz["type"], 
-                    "description": tz["description"],
-                    "risk": {"trustRating": 10 if "private" in tz["type"] else 3}
-                } for tz in trust_zones
-            ],
-            "components": [
-                {
-                    "id": str(uuid.uuid4()),
-                    "name": comp["name"],
-                    "type": comp["type"],
-                    "description": comp["description"], 
-                    "tags": comp["tags"]
-                } for comp in components
-            ],
-            "dataflows": [
-                {
-                    "id": str(uuid.uuid4()),
-                    "name": df["name"],
-                    "source": df["source"],
-                    "destination": df["destination"],
-                    "description": df["description"],
-                    "tags": df["tags"]
-                } for df in data_flows
-            ],
-            "threats": [
-                {
-                    "id": str(uuid.uuid4()),
-                    "name": threat["name"],
-                    "categories": [threat["category"]],
-                    "description": threat["description"],
-                    "risk": {
-                        "impact": threat["impact"],
-                        "impactComment": f"{threat['severity']} severity {threat['category']} threat"
-                    },
-                    "tags": ["stride", threat["category"], "developer-focused"]
-                } for threat in threats
-            ],
-            "mitigations": [
-                {
-                    "id": str(uuid.uuid4()),
-                    "name": mit["name"],
-                    "description": mit["description"],
-                    "riskReduction": mit["riskReduction"],
-                    "tags": ["security-control", "developer-actionable"]
-                } for mit in mitigations
-            ]
-        }
+        # Use centralized OTM generation function
+        otm_data, is_valid, validation_message = create_validated_otm_structure(
+            project_name=project_name,
+            project_description=project_description,
+            components=components,
+            trust_zones=trust_zones,
+            data_flows=data_flows,
+            threats=threats,
+            mitigations=mitigations,
+            project_tags=["developer-generated", "security-discussion", "devici-ready"]
+        )
         
-        # Validate OTM data
-        is_valid, validation_message = validate_otm_data(otm_data)
         if not is_valid:
-            return f"❌ Generated OTM failed validation:\n{validation_message}"
+            return f"❌ Generated OTM failed validation even after auto-fix:\n{validation_message}"
         
         # Create threat model in Devici
         async with create_client_from_env() as client:
@@ -2472,8 +2816,21 @@ async def visualize_otm_as_mermaid(otm_file_path: str) -> str:
         destination = flow.get("destination", "")
         flow_name = flow.get("name", f"Flow {i+1}")
         
-        source_id = component_ids.get(source, f"Unknown_{source}")
-        dest_id = component_ids.get(destination, f"Unknown_{destination}")
+        # Try to match by component name first, then by ID
+        source_id = None
+        dest_id = None
+        
+        for comp_name, comp_id in component_ids.items():
+            if comp_name == source:
+                source_id = comp_id
+            if comp_name == destination:
+                dest_id = comp_id
+        
+        # If not found by name, try by ID
+        if not source_id:
+            source_id = source if source.startswith('C') else f"Unknown_{source}"
+        if not dest_id:
+            dest_id = destination if destination.startswith('C') else f"Unknown_{destination}"
         
         # Create arrow with label
         mermaid_lines.append(f"    {source_id} -->|{flow_name}| {dest_id}")
@@ -2519,34 +2876,213 @@ async def visualize_otm_as_mermaid(otm_file_path: str) -> str:
         for category, count in threat_counts.items():
             threat_summary += f"   • {category.title()}: {count} threats\n"
     
-    return f"""
-🎯 **OTM Visualization Generated**
+    return mermaid_diagram
 
-**📄 File:** `{otm_file_path}`
-**🏗️ Components:** {len(components)}
-**🔄 Data Flows:** {len(dataflows)}
-**🛡️ Trust Zones:** {len(trust_zones)}
-**⚠️ Threats:** {len(threats)}
-{threat_summary}
+# =============================================================================
+# CENTRALIZED OTM GENERATION - ONE PLACE FOR ALL OTM CREATION
+# =============================================================================
 
-**📊 Mermaid Diagram:**
-
-```mermaid
-{mermaid_diagram}
-```
-
-**💡 How to Use:**
-1. **Review the diagram** above to understand your architecture
-2. **Verify components** are correctly identified
-3. **Check data flows** between components
-4. **Review trust boundaries** and zones
-5. **Import to Devici** when ready: `import_otm_to_devici("{otm_file_path}", "collection_name")`
-
-**🔧 Need Changes?**
-- Edit the OTM file manually if needed
-- Regenerate with `create_otm_file_for_devici()` for fresh analysis
-- Use `create_otm_from_description()` for custom descriptions
-"""
+def create_validated_otm_structure(
+    project_name: str,
+    project_description: str,
+    components: list,
+    trust_zones: list,
+    data_flows: list,
+    threats: list,
+    mitigations: list,
+    project_tags: list = None
+) -> tuple[dict, bool, str]:
+    """
+    Create a validated OTM structure that matches Devici's exact format.
+    This is the SINGLE SOURCE OF TRUTH for OTM generation.
+    
+    Returns (otm_data, is_valid, validation_message)
+    """
+    import uuid
+    
+    if project_tags is None:
+        project_tags = ["auto-generated", "devici-ready"]
+    
+    # Generate project ID
+    project_id = str(uuid.uuid4())
+    
+    # Generate representation ID 
+    representation_id = str(uuid.uuid4())
+    
+    # Ensure trust zones have IDs
+    for tz in trust_zones:
+        if "id" not in tz or not tz["id"]:
+            tz["id"] = str(uuid.uuid4())
+    
+    # Get default trust zone ID - use first component's ID if no trust zones
+    default_trust_zone_id = trust_zones[0]["id"] if trust_zones else str(uuid.uuid4())
+    
+    # Build threats first to get threat IDs
+    severity_to_impact = {"Low": 25, "Medium": 50, "High": 75, "Critical": 100}
+    threat_data = []
+    threat_ids = []
+    
+    for threat in threats:
+        threat_id = str(uuid.uuid4())
+        threat_ids.append(threat_id)
+        
+        # Handle both string and numeric impact values, use -1 for Devici compatibility
+        if isinstance(threat.get("impact"), str):
+            impact_value = severity_to_impact.get(threat["impact"], -1)
+        elif isinstance(threat.get("impact"), int):
+            impact_value = threat["impact"]
+        else:
+            impact_value = -1  # Devici default
+        
+        # Handle categories field properly
+        categories = threat.get("categories")
+        if not categories:
+            category = threat.get("category")
+            categories = [category] if category else []
+        
+        threat_data.append({
+            "name": threat["name"],
+            "id": threat_id,
+            "description": threat.get("description", ""),
+            "categories": categories,
+            "cwes": [],
+            "risk": {
+                "likelihood": threat.get("likelihood", -1),
+                "impact": impact_value
+            },
+            "attributes": None,
+            "tags": threat.get("tags", []),
+            "isCustom": True,
+            "priority": threat.get("priority", "medium"),
+            "refId": None,
+            "source": None
+        })
+    
+    # Build components with DEVICI FORMAT
+    component_data = []
+    for i, comp in enumerate(components):
+        comp_id = str(uuid.uuid4())
+        
+        # Map component types to Devici format
+        comp_type = comp["type"]
+        if comp_type == "process":
+            comp_type = "processNode"
+        elif comp_type == "datastore":
+            comp_type = "datastoreNode"
+        elif comp_type == "external-entity":
+            comp_type = "externalEntityNode"
+        elif comp_type == "web-service":
+            comp_type = "processNode"
+        
+        # Assign threats to components (distribute evenly)
+        component_threats = []
+        if threat_ids:
+            threat_index = i % len(threat_ids)
+            component_threats.append({
+                "threat": threat_ids[threat_index],
+                "state": "open",
+                "mitigations": []
+            })
+        
+        component_data.append({
+            "representationId": representation_id,
+            "name": comp["name"],
+            "id": comp_id,
+            "description": comp.get("description", ""),
+            "metaData": {
+                "id": "",
+                "label": comp["name"],
+                "selectedBy": [],
+                "representation": representation_id
+            },
+            "parent": {"trustZone": default_trust_zone_id},
+            "type": comp_type,
+            "tags": comp.get("tags", []),
+            "representations": [
+                {
+                    "representation": representation_id,
+                    "id": representation_id,
+                    "position": {"x": 100 + (i * 200), "y": 100 + (i * 100)},
+                    "size": {"width": 150, "height": 100}
+                }
+            ],
+            "assets": [],
+            "threats": component_threats,
+            "attributes": {}
+        })
+    
+    # Create component name to ID mapping for dataflows
+    component_name_to_id = {comp["name"]: comp["id"] for comp in component_data}
+    
+    # Build dataflows with proper UUIDs
+    dataflow_data = []
+    for df in data_flows:
+        source_id = component_name_to_id.get(df["source"], list(component_name_to_id.values())[0] if component_name_to_id else str(uuid.uuid4()))
+        dest_id = component_name_to_id.get(df["destination"], list(component_name_to_id.values())[1] if len(component_name_to_id) > 1 else str(uuid.uuid4()))
+        
+        dataflow_data.append({
+            "id": str(uuid.uuid4()),
+            "name": df["name"],
+            "source": source_id,
+            "destination": dest_id,
+            "description": df.get("description", ""),
+            "tags": df.get("tags", [])
+        })
+    
+    # Build trust zones with required fields
+    trust_zone_data = []
+    for tz in trust_zones:
+        trust_zone_data.append({
+            "id": tz["id"],
+            "name": tz["name"],
+            "type": tz["type"],
+            "description": tz["description"],
+            "risk": tz.get("risk", {"trustRating": 10 if "private" in tz["type"] else 3})
+        })
+    
+    # Build mitigations
+    mitigation_data = []
+    for mit in mitigations:
+        mitigation_data.append({
+            "id": str(uuid.uuid4()),
+            "name": mit["name"],
+            "description": mit["description"],
+            "riskReduction": mit["riskReduction"],
+            "tags": mit.get("tags", ["security-control"])
+        })
+    
+    # Create final OTM structure matching Devici format EXACTLY
+    otm_data = {
+        "otmVersion": "0.2.0",
+        "projectId": project_id,
+        "project": {
+            "name": project_name,
+            "id": project_id,
+            "description": project_description,
+            "owner": "Security Team",
+            "ownerContact": "",
+            "tags": project_tags,
+            "attributes": None
+        },
+        "representations": [
+            {
+                "name": "Canvas 1",
+                "id": representation_id,
+                "type": "diagram",
+                "size": None,
+                "attributes": None
+            }
+        ],
+        "assets": [],
+        "components": component_data,
+        "dataflows": dataflow_data,
+        "trustZones": trust_zone_data,
+        "threats": threat_data,
+        "mitigations": mitigation_data
+    }
+    
+    # Validate and auto-fix the generated OTM
+    return validate_and_fix_otm_data(otm_data)
 
 def main():
     """Main entry point for the server."""
