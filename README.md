@@ -47,15 +47,85 @@ Same configuration in Cursor MCP settings.
 
 ## Real Use Cases
 
-### 1. Software Developer Starting Threat Model
+### 1. **PRIMARY USE CASE: Analyze Current Project**
+**Scenario:** You're working on a project and want to generate a threat model from your actual codebase.
+
+**Ask your AI assistant:**
+```
+"Analyze my current project and create a threat model in Devici. I want URLs to share with my team."
+```
+
+**What it does:**
+- Scans your project files (package.json, requirements.txt, etc.)
+- Detects technologies (React, Node.js, Python, databases)
+- Identifies architecture patterns (frontend, backend, database, APIs)
+- Generates components, data flows, and STRIDE threats
+- Creates threat model in Devici with instant URLs
+
+**Result:**
+- Complete threat model based on your actual code
+- Clickable Devici URLs for immediate team access
+- Architecture diagram with detected components
+- STRIDE threats specific to your tech stack
+
+### 2. **Create OTM File for Local Review**
+**Scenario:** You want to generate a threat model from your project but review it locally before importing to Devici.
+
+**Ask your AI assistant:**
+```
+"Create an OTM file from my current project for local review."
+```
+
+**What it does:**
+- Scans your project files and detects architecture
+- Generates complete OTM file with components, threats, and mitigations
+- Saves file locally (e.g., `my-project-devici-ready.otm`)
+- Validates against OTM schema
+
+**Result:**
+- Local OTM file ready for review
+- Can be opened with text editor or OTM viewers
+- Ready for import to Devici when approved
+
+### 3. **Import Reviewed OTM File**
+**Scenario:** You've reviewed your OTM file locally and want to import it to Devici.
+
+**Ask your AI assistant:**
+```
+"Import my reviewed OTM file 'my-project-devici-ready.otm' to the 'Security Reviews' collection."
+```
+
+**Result:**
+- Imports your reviewed OTM file to Devici
+- Creates threat model with all components and threats
+- Provides instant clickable URLs for team access
+
+### 4. **Visualize OTM File as Diagram**
+**Scenario:** You have an OTM file and want to see a visual diagram before importing to Devici.
+
+**Ask your AI assistant:**
+```
+"Show me a Mermaid diagram of my OTM file 'my-project-devici-ready.otm'."
+```
+
+**What it does:**
+- Reads your OTM file and extracts components, data flows, and trust zones
+- Generates a Mermaid diagram showing architecture
+- Color-codes different component types (web apps, databases, external services)
+- Shows data flows between components
+- Provides threat summary by category
+
+**Result:**
+- Interactive Mermaid diagram of your threat model
+- Visual verification of architecture before import
+- Clear overview of components and relationships
+
+### 5. Software Developer Starting Fresh Threat Model
 **Scenario:** You're building a new e-commerce app and need to start security discussions with your team.
 
+**Ask your AI assistant:**
 ```
-create_developer_threat_model(
-    "E-commerce Platform",
-    "React frontend with Node.js API, PostgreSQL database, and Stripe payments",
-    "React, Node.js, PostgreSQL, Stripe"
-)
+"Create a threat model for my e-commerce platform. It's a React frontend with Node.js API, PostgreSQL database, and Stripe payments. I need URLs to share with my security team."
 ```
 
 **Result:** 
@@ -63,14 +133,12 @@ create_developer_threat_model(
 - Returns instant clickable Devici URLs
 - Ready to share with security team
 
-### 2. Security Team Reviewing Microservices
+### 6. Security Team Reviewing Microservices
 **Scenario:** Security team needs to assess a complex microservices architecture.
 
+**Ask your AI assistant:**
 ```
-create_otm_from_description(
-    "Kubernetes microservices with API Gateway, Redis cache, and MongoDB",
-    "Docker, Kubernetes, Redis, MongoDB, Nginx"
-)
+"Generate a threat model for our Kubernetes microservices architecture. We have an API Gateway, Redis cache, and MongoDB. Tech stack includes Docker, Kubernetes, Redis, MongoDB, and Nginx."
 ```
 
 **Result:**
@@ -78,15 +146,12 @@ create_otm_from_description(
 - Maps security boundaries and data flows
 - Identifies key threat vectors
 
-### 3. DevOps Creating Infrastructure Threat Model
+### 7. DevOps Creating Infrastructure Threat Model
 **Scenario:** Need to model cloud infrastructure for compliance audit.
 
+**Ask your AI assistant:**
 ```
-create_complete_threat_model_with_components(
-    "AWS Production Infrastructure",
-    "Infrastructure",
-    "load balancer, web servers, database cluster, S3 storage"
-)
+"Create a threat model for our AWS production infrastructure. Include load balancer, web servers, database cluster, and S3 storage."
 ```
 
 **Result:**
@@ -94,11 +159,12 @@ create_complete_threat_model_with_components(
 - Infrastructure-specific threats
 - Compliance-ready documentation
 
-### 4. Team Lead Importing Existing Analysis
+### 8. Team Lead Importing Existing Analysis
 **Scenario:** You have an existing OTM file from another tool and want to import it.
 
+**Ask your AI assistant:**
 ```
-import_otm_to_devici("my-analysis.otm", "Security Reviews")
+"Import my existing threat model file 'my-analysis.otm' into the 'Security Reviews' collection in Devici."
 ```
 
 **Result:**
@@ -106,11 +172,12 @@ import_otm_to_devici("my-analysis.otm", "Security Reviews")
 - Places in specified collection
 - Provides direct URLs for team access
 
-### 5. Developer Getting Project Overview
+### 9. Developer Getting Project Overview
 **Scenario:** New team member needs to understand existing threat models.
 
+**Ask your AI assistant:**
 ```
-show_my_threat_models("Web Applications")
+"Show me all threat models in the 'Web Applications' collection."
 ```
 
 **Result:**
@@ -118,17 +185,12 @@ show_my_threat_models("Web Applications")
 - Shows creation dates and owners
 - Quick access to relevant models
 
-### 6. Security Engineer Adding Specific Threats
+### 10. Security Engineer Adding Specific Threats
 **Scenario:** Need to add custom threats to existing components.
 
+**Ask your AI assistant:**
 ```
-create_threat_for_component(
-    "SQL Injection via User Input",
-    "component-id-123",
-    "Unvalidated user input could allow SQL injection attacks",
-    "high",
-    "Tampering"
-)
+"Add a high-priority SQL injection threat to the user input component. It should be categorized as Tampering in STRIDE."
 ```
 
 **Result:**

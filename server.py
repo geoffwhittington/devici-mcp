@@ -2391,6 +2391,163 @@ async def get_threat_models_report(start: str | None = None, end: str | None = N
         result = await client.get_threat_models_report(start=start, end=end)
         return str(result)
 
+@mcp.tool()
+async def visualize_otm_as_mermaid(otm_file_path: str) -> str:
+    """
+    Visualize an OTM file as a Mermaid diagram for local review
+    
+    Perfect for reviewing threat models before importing to Devici.
+    Creates a visual representation showing components, data flows, and trust zones.
+    
+    Args:
+        otm_file_path: Path to the OTM file to visualize
+    """
+    import json
+    import os
+    
+    if not os.path.exists(otm_file_path):
+        return f"❌ OTM file not found: {otm_file_path}"
+    
+    try:
+        with open(otm_file_path, 'r') as f:
+            otm_data = json.load(f)
+    except json.JSONDecodeError as e:
+        return f"❌ Invalid JSON in OTM file: {str(e)}"
+    except Exception as e:
+        return f"❌ Error reading OTM file: {str(e)}"
+    
+    # Extract data from OTM
+    project_name = otm_data.get("project", {}).get("name", "Threat Model")
+    components = otm_data.get("components", [])
+    dataflows = otm_data.get("dataflows", [])
+    trust_zones = otm_data.get("trustZones", [])
+    threats = otm_data.get("threats", [])
+    
+    # Generate Mermaid diagram
+    mermaid_lines = [
+        "graph TD",
+        f"    %% {project_name} - Architecture Overview",
+        ""
+    ]
+    
+    # Add trust zones as subgraphs
+    zone_components = {}
+    for i, zone in enumerate(trust_zones):
+        zone_id = f"TZ{i}"
+        zone_name = zone.get("name", f"Trust Zone {i+1}")
+        zone_type = zone.get("type", "unknown")
+        
+        mermaid_lines.append(f"    subgraph {zone_id}[\"{zone_name}<br/>({zone_type})\"]")
+        zone_components[zone_name] = zone_id
+        mermaid_lines.append("    end")
+        mermaid_lines.append("")
+    
+    # Add components
+    component_ids = {}
+    for i, comp in enumerate(components):
+        comp_id = f"C{i}"
+        comp_name = comp.get("name", f"Component {i+1}")
+        comp_type = comp.get("type", "unknown")
+        
+        # Determine component shape and style based on type
+        if comp_type in ["web-application", "web-service"]:
+            shape = f"{comp_id}[(\"{comp_name}<br/>{comp_type}\")]"
+        elif comp_type == "datastore":
+            shape = f"{comp_id}[(\"{comp_name}<br/>{comp_type}\")]"
+        elif comp_type == "external-service":
+            shape = f"{comp_id}[[\"{comp_name}<br/>{comp_type}\"]]"
+        elif comp_type == "process":
+            shape = f"{comp_id}[\"{comp_name}<br/>{comp_type}\"]"
+        else:
+            shape = f"{comp_id}[\"{comp_name}<br/>{comp_type}\"]"
+        
+        mermaid_lines.append(f"    {shape}")
+        component_ids[comp_name] = comp_id
+    
+    mermaid_lines.append("")
+    
+    # Add data flows
+    for i, flow in enumerate(dataflows):
+        source = flow.get("source", "")
+        destination = flow.get("destination", "")
+        flow_name = flow.get("name", f"Flow {i+1}")
+        
+        source_id = component_ids.get(source, f"Unknown_{source}")
+        dest_id = component_ids.get(destination, f"Unknown_{destination}")
+        
+        # Create arrow with label
+        mermaid_lines.append(f"    {source_id} -->|{flow_name}| {dest_id}")
+    
+    mermaid_lines.append("")
+    
+    # Add styling
+    mermaid_lines.extend([
+        "    %% Styling",
+        "    classDef webApp fill:#e1f5fe,stroke:#0277bd,stroke-width:2px",
+        "    classDef datastore fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px", 
+        "    classDef external fill:#fff3e0,stroke:#f57c00,stroke-width:2px",
+        "    classDef process fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px",
+        ""
+    ])
+    
+    # Apply styles to components
+    for i, comp in enumerate(components):
+        comp_id = f"C{i}"
+        comp_type = comp.get("type", "unknown")
+        
+        if comp_type in ["web-application", "web-service"]:
+            mermaid_lines.append(f"    class {comp_id} webApp")
+        elif comp_type == "datastore":
+            mermaid_lines.append(f"    class {comp_id} datastore")
+        elif comp_type == "external-service":
+            mermaid_lines.append(f"    class {comp_id} external")
+        elif comp_type == "process":
+            mermaid_lines.append(f"    class {comp_id} process")
+    
+    mermaid_diagram = "\n".join(mermaid_lines)
+    
+    # Generate summary
+    threat_summary = ""
+    if threats:
+        threat_counts = {}
+        for threat in threats:
+            categories = threat.get("categories", ["unknown"])
+            for category in categories:
+                threat_counts[category] = threat_counts.get(category, 0) + 1
+        
+        threat_summary = "\n**🚨 Threats Identified:**\n"
+        for category, count in threat_counts.items():
+            threat_summary += f"   • {category.title()}: {count} threats\n"
+    
+    return f"""
+🎯 **OTM Visualization Generated**
+
+**📄 File:** `{otm_file_path}`
+**🏗️ Components:** {len(components)}
+**🔄 Data Flows:** {len(dataflows)}
+**🛡️ Trust Zones:** {len(trust_zones)}
+**⚠️ Threats:** {len(threats)}
+{threat_summary}
+
+**📊 Mermaid Diagram:**
+
+```mermaid
+{mermaid_diagram}
+```
+
+**💡 How to Use:**
+1. **Review the diagram** above to understand your architecture
+2. **Verify components** are correctly identified
+3. **Check data flows** between components
+4. **Review trust boundaries** and zones
+5. **Import to Devici** when ready: `import_otm_to_devici("{otm_file_path}", "collection_name")`
+
+**🔧 Need Changes?**
+- Edit the OTM file manually if needed
+- Regenerate with `create_otm_file_for_devici()` for fresh analysis
+- Use `create_otm_from_description()` for custom descriptions
+"""
+
 def main():
     """Main entry point for the server."""
     mcp.run()
