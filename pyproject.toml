@@ -49,14 +49,15 @@ Issues = "https://github.com/geoffwhittington/devici-mcp/issues"
 Documentation = "https://github.com/geoffwhittington/devici-mcp#readme"
 
 [project.scripts]
-devici-mcp-server = "devici_mcp_server.__main__:main"
+devici-mcp-server = "server:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/devici_mcp_server"]
+packages = ["."]
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "/src",
+    "/server.py",
+    "/api_client.py",
     "/README.md",
     "/DEPLOYMENT.md",
     "/LICENSE",

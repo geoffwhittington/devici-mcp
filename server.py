@@ -111,7 +111,7 @@ import json
 import os
 from pathlib import Path
 from mcp.server.fastmcp import FastMCP
-from .api_client import create_client_from_env
+from api_client import create_client_from_env
 
 try:
     import jsonschema
