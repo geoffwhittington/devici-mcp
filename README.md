@@ -1,149 +1,31 @@
 # Devici MCP Server
 
-A Model Context Protocol (MCP) server for interacting with the Devici API. This server provides LLM tools to manage users, collections, threat models, components, threats, mitigations, teams, and dashboard data through the Devici platform.
+A Model Context Protocol (MCP) server for threat modeling with Devici. Generate threat models from code and get instant clickable URLs for team collaboration.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 
-## Features
+## Quick Install
 
-The Devici MCP Server provides tools for:
-
-### User Management
-- Get users with pagination
-- Get specific user by ID
-- Search users by field and text
-- Invite new users
-
-### Collections Management
-- Get collections with pagination
-- Get specific collection by ID
-- Create new collections
-
-### Threat Models Management
-- Get all threat models with pagination
-- Get threat models by collection
-- Get specific threat model by ID
-- Create new threat models
-
-### Components Management
-- Get components with pagination
-- Get specific component by ID
-- Get components by canvas
-- Create new components
-
-### Threats Management
-- Get threats with pagination
-- Get specific threat by ID
-- Get threats by component
-- Create new threats
-
-### Mitigations Management
-- Get mitigations with pagination
-- Get specific mitigation by ID
-- Get mitigations by threat
-- Create new mitigations
-
-### Teams Management
-- Get teams with pagination
-- Get specific team by ID
-- Get team users
-- Create new teams
-
-### Dashboard & Reports
-- Get dashboard data
-- Get report data
-- Get threat model statistics
-
-### Comments & Audit
-- Get comments with pagination
-- Get specific comment by ID
-- Get audit logs
-
-### Codex Integration
-- Get codex attributes
-- Get codex mitigations
-- Get codex threats
-
-## Quick Start
-
-### Using uvx (recommended)
-
-#### Option 1: From GitHub (Current)
 ```bash
 uvx git+https://github.com/geoffwhittington/devici-mcp.git
 ```
 
-#### Option 2: From PyPI (Future - when published)
-```bash
-uvx devici-mcp-server
-```
-
-### Using uv
-
-#### Install from GitHub
-```bash
-uv pip install git+https://github.com/geoffwhittington/devici-mcp.git
-devici-mcp-server
-```
-
-#### Install from PyPI (when available)
-```bash
-uv pip install devici-mcp-server
-devici-mcp-server
-```
-
-### Using pip
-
-#### Install from GitHub
-```bash
-pip install git+https://github.com/geoffwhittington/devici-mcp.git
-devici-mcp-server
-```
-
-#### Install from PyPI (when available)
-```bash
-pip install devici-mcp-server
-devici-mcp-server
-```
-
 ## Configuration
 
-The server requires three environment variables:
-- `DEVICI_API_BASE_URL`: Your Devici instance URL (e.g., `https://api.devici.com/v1`)
-- `DEVICI_CLIENT_ID`: Your Devici client ID
-- `DEVICI_CLIENT_SECRET`: Your Devici client secret
+Get your API credentials from Devici: **Settings** > **API Access**
 
-### Setting Environment Variables
-
-#### Option 1: Environment Variables
+Set environment variables:
 ```bash
 export DEVICI_API_BASE_URL="https://api.devici.com/v1"
 export DEVICI_CLIENT_ID="your-client-id-here"
 export DEVICI_CLIENT_SECRET="your-client-secret-here"
 ```
 
-#### Option 2: .env File
-Create a `.env` file in your working directory:
-```
-DEVICI_API_BASE_URL=https://api.devici.com/v1
-DEVICI_CLIENT_ID=your-client-id-here
-DEVICI_CLIENT_SECRET=your-client-secret-here
-```
-
-### Getting Your API Credentials
-1. Log into your Devici instance
-2. Go to **Settings** > **API Access**
-3. Generate a new client ID and secret
-4. Copy the values for use as `DEVICI_CLIENT_ID` and `DEVICI_CLIENT_SECRET`
-
-## MCP Client Configuration
+## MCP Client Setup
 
 ### Claude Desktop
-Add this to your Claude Desktop configuration file:
-
-#### Option 1: From GitHub (Current)
+Add to `~/.config/claude-desktop/claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
@@ -152,63 +34,6 @@ Add this to your Claude Desktop configuration file:
       "args": ["git+https://github.com/geoffwhittington/devici-mcp.git"],
       "env": {
         "DEVICI_API_BASE_URL": "https://api.devici.com/v1",
-        "DEVICI_CLIENT_ID": "your-client-id-here",
-        "DEVICI_CLIENT_SECRET": "your-client-secret-here"
-      }
-    }
-  }
-}
-```
-
-#### Option 2: From PyPI (Future)
-```json
-{
-  "mcpServers": {
-    "devici": {
-      "command": "uvx",
-      "args": ["devici-mcp-server"],
-      "env": {
-        "DEVICI_API_BASE_URL": "https://api.devici.com/v1",
-        "DEVICI_CLIENT_ID": "your-client-id-here",
-        "DEVICI_CLIENT_SECRET": "your-client-secret-here"
-      }
-    }
-  }
-}
-```
-
-### Cline
-Add this to your Cline MCP settings:
-
-#### From GitHub (Current)
-```json
-{
-  "mcpServers": {
-    "devici": {
-      "command": "uvx",
-      "args": ["git+https://github.com/geoffwhittington/devici-mcp.git"],
-      "env": {
-        "DEVICI_API_BASE_URL": "https://api.devici.com/v1",
-        "DEVICI_CLIENT_ID": "your-client-id-here",
-        "DEVICI_CLIENT_SECRET": "your-client-secret-here"
-      }
-    }
-  }
-}
-```
-
-### Continue
-Add this to your Continue configuration:
-
-#### From GitHub (Current)
-```json
-{
-  "mcpServers": {
-    "devici": {
-      "command": "uvx",
-      "args": ["git+https://github.com/geoffwhittington/devici-mcp.git"],
-      "env": {
-        "DEVICI_API_BASE_URL": "https://api.devici.com/api/v1",
         "DEVICI_CLIENT_ID": "your-client-id-here",
         "DEVICI_CLIENT_SECRET": "your-client-secret-here"
       }
@@ -218,135 +43,103 @@ Add this to your Continue configuration:
 ```
 
 ### Cursor
-Add this to your Cursor configuration file:
+Same configuration in Cursor MCP settings.
 
-#### Option 1: From GitHub (Current)
-```json
-{
-  "mcpServers": {
-    "devici": {
-      "command": "uvx",
-      "args": ["git+https://github.com/geoffwhittington/devici-mcp.git"],
-      "env": {
-        "DEVICI_API_BASE_URL": "https://api.devici.com/api/v1",
-        "DEVICI_CLIENT_ID": "your-client-id-here",
-        "DEVICI_CLIENT_SECRET": "your-client-secret-here"
-      }
-    }
-  }
-}
+## Real Use Cases
+
+### 1. Software Developer Starting Threat Model
+**Scenario:** You're building a new e-commerce app and need to start security discussions with your team.
+
+```
+create_developer_threat_model(
+    "E-commerce Platform",
+    "React frontend with Node.js API, PostgreSQL database, and Stripe payments",
+    "React, Node.js, PostgreSQL, Stripe"
+)
 ```
 
-#### Option 2: Using local installation
-If you have the package installed locally:
-```json
-{
-  "mcpServers": {
-    "devici": {
-      "command": "devici-mcp-server",
-      "env": {
-        "DEVICI_API_BASE_URL": "https://api.devici.com/api/v1",
-        "DEVICI_CLIENT_ID": "your-client-id-here",
-        "DEVICI_CLIENT_SECRET": "your-client-secret-here"
-      }
-    }
-  }
-}
+**Result:** 
+- Creates complete threat model with components and STRIDE threats
+- Returns instant clickable Devici URLs
+- Ready to share with security team
+
+### 2. Security Team Reviewing Microservices
+**Scenario:** Security team needs to assess a complex microservices architecture.
+
+```
+create_otm_from_description(
+    "Kubernetes microservices with API Gateway, Redis cache, and MongoDB",
+    "Docker, Kubernetes, Redis, MongoDB, Nginx"
+)
 ```
 
-#### Option 3: Using Python module directly
-```json
-{
-  "mcpServers": {
-    "devici": {
-      "command": "python",
-      "args": ["-m", "devici_mcp_server"],
-      "env": {
-        "DEVICI_API_BASE_URL": "https://api.devici.com/api/v1",
-        "DEVICI_CLIENT_ID": "your-client-id-here",
-        "DEVICI_CLIENT_SECRET": "your-client-secret-here"
-      }
-    }
-  }
-}
+**Result:**
+- Generates detailed OTM file with all components
+- Maps security boundaries and data flows
+- Identifies key threat vectors
+
+### 3. DevOps Creating Infrastructure Threat Model
+**Scenario:** Need to model cloud infrastructure for compliance audit.
+
+```
+create_complete_threat_model_with_components(
+    "AWS Production Infrastructure",
+    "Infrastructure",
+    "load balancer, web servers, database cluster, S3 storage"
+)
 ```
 
-## Development
+**Result:**
+- Visual components on Devici canvas
+- Infrastructure-specific threats
+- Compliance-ready documentation
 
-### Prerequisites
-- [uv](https://docs.astral.sh/uv/getting-started/installation/) installed
-- Python 3.10 or higher
+### 4. Team Lead Importing Existing Analysis
+**Scenario:** You have an existing OTM file from another tool and want to import it.
 
-### Setup
-```bash
-# Clone the repository
-git clone <repository-url>
-cd devici-mcp
-
-# Create virtual environment and install dependencies
-uv sync
-
-# Run in development mode
-uv run python -m devici_mcp_server
+```
+import_otm_to_devici("my-analysis.otm", "Security Reviews")
 ```
 
-### Testing
-```bash
-# Run the import test
-uv run python test_basic.py
+**Result:**
+- Imports all components, threats, and mitigations
+- Places in specified collection
+- Provides direct URLs for team access
 
-# Test with environment variables
-DEVICI_API_BASE_URL=https://api.devici.com/api/v1 DEVICI_CLIENT_ID=test DEVICI_CLIENT_SECRET=test uv run python -m devici_mcp_server
+### 5. Developer Getting Project Overview
+**Scenario:** New team member needs to understand existing threat models.
+
+```
+show_my_threat_models("Web Applications")
 ```
 
-### Building
-```bash
-# Build the package
-uv build
+**Result:**
+- Lists all threat models in collection
+- Shows creation dates and owners
+- Quick access to relevant models
 
-# Install locally for testing
-uv pip install dist/*.whl
+### 6. Security Engineer Adding Specific Threats
+**Scenario:** Need to add custom threats to existing components.
+
+```
+create_threat_for_component(
+    "SQL Injection via User Input",
+    "component-id-123",
+    "Unvalidated user input could allow SQL injection attacks",
+    "high",
+    "Tampering"
+)
 ```
 
-## Features
+**Result:**
+- Adds threat linked to specific component
+- Categorized with STRIDE methodology
+- Prioritized for remediation
 
-- **Full API Coverage**: Supports all major Devici API endpoints
-- **Authentication**: Secure client ID/secret-based authentication
-- **Error Handling**: Comprehensive error handling and validation
-- **Environment Configuration**: Flexible configuration via environment variables
-- **Modern Python**: Built with modern Python packaging (uv, pyproject.toml)
-- **MCP Compliant**: Fully compatible with the Model Context Protocol
+## Key Features
 
-## API Coverage
-
-This server provides access to:
-- Users and Teams
-- Collections and Threat Models
-- Components and Threats
-- Mitigations and Comments
-- Dashboard Data and Reports
-- Audit Logs and Codex Integration
-- Search and Bulk Operations
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## Support
-
-For issues and questions:
-- Check the [Issues](https://github.com/geoffwhittington/devici-mcp/issues) page
-- Review the Devici API documentation
-- Ensure your API credentials have proper permissions
-
----
-
-**Note**: This is an unofficial MCP server for Devici. For official Devici support, please contact the Devici team. 
+- **Instant URLs:** Get clickable Devici links for immediate team sharing
+- **Code Analysis:** Generate threat models from project descriptions
+- **STRIDE Integration:** Automatic threat categorization
+- **OTM Support:** Full Open Threat Model standard compliance
+- **Team Collaboration:** Built for developer → security team workflows

@@ -7,12 +7,12 @@ Enhanced with developer-friendly tools and natural language interface.
 QUICK START GUIDE:
 ==================
 
-🏆 RECOMMENDED APPROACH - Secure & Enterprise-Ready:
-   create_otm_from_description("React e-commerce with Node.js API and PostgreSQL", "React, Node.js, PostgreSQL")
+🏆 RECOMMENDED FOR DEVELOPERS - Instant Devici URLs:
+   create_developer_threat_model("My E-commerce App", "React e-commerce with Node.js API and PostgreSQL", "React, Node.js, PostgreSQL")
 
-🎯 NEW - Browser Learning Enhanced:
+🔥 ALTERNATIVE APPROACHES:
+   create_otm_from_description("React e-commerce with Node.js API and PostgreSQL", "React, Node.js, PostgreSQL")
    create_complete_threat_model_with_components("My Web App", "Sandbox", "web server, database, user browser")
-   create_component_with_visual_placement("Web Server", "process", "threat-model-id", "Main app server")
 
 ⚡ ALTERNATIVE - File Scanning (Power Users):
    create_otm_file_for_devici()  # Scans current directory
@@ -67,20 +67,24 @@ SECONDARY: File Scanning (POWER USERS)
 EXAMPLES:
 ========
 
-E-commerce Platform:
-   create_otm_from_description(
+🚀 DEVELOPER WORKFLOW - Get Instant URLs:
+   create_developer_threat_model(
+       "E-commerce Platform",
        "E-commerce platform with React frontend, Node.js API, PostgreSQL database, Stripe payments",
        "React, Node.js, PostgreSQL, Stripe"
    )
+   → Returns clickable Devici URLs for immediate team sharing
 
-Mobile App:
-   create_otm_from_description(
+📱 Mobile App Security:
+   create_developer_threat_model(
+       "Banking App",
        "iOS banking app with biometric auth and push notifications",
        "Swift, CoreData, TouchID, APNS"
    )
 
-Microservices:
-   create_otm_from_description(
+🔧 Microservices Architecture:
+   create_developer_threat_model(
+       "Cloud Platform",
        "Microservices architecture with Docker, Kubernetes, and Redis",
        "Docker, Kubernetes, Redis, gRPC"
    )
@@ -182,7 +186,7 @@ async def show_my_collections(limit: int = 10) -> str:
         return str(result)
 
 @mcp.tool()
-async def show_my_threat_models(collection_name: str = None, limit: int = 10) -> str:
+async def show_my_threat_models(collection_name: str | None = None, limit: int = 10) -> str:
     """Show me my threat models, optionally filtered by collection name"""
     async with create_client_from_env() as client:
         if collection_name:
@@ -220,115 +224,10 @@ async def show_my_threat_models(collection_name: str = None, limit: int = 10) ->
         
         return str(result)
 
-@mcp.tool()
-async def start_threat_modeling(project_description: str = None) -> str:
-    """Start a guided threat modeling session - I'll ask questions to help identify security risks"""
-    
-    if not project_description:
-        return """
-🎯 **Let's Start Threat Modeling!**
-
-I need to know about your project first. Please tell me:
-
-**What does your project do?** 
-Example: "It's a web API that handles user payments and stores customer data in PostgreSQL"
-
-**What type of project is it?**
-- web-application (websites, web apps)
-- api (REST APIs, microservices)  
-- mobile-app (iOS/Android apps)
-- desktop-app (standalone applications)
-
-Once you describe your project, I'll ask targeted security questions and help identify risks!
-
-**Example to try:**
-start_threat_modeling("An e-commerce API that processes payments")
-"""
-    
-    # Simple threat assessment based on description
-    project_type = "web-application"
-    desc_lower = project_description.lower()
-    
-    if any(word in desc_lower for word in ['api', 'rest', 'microservice', 'endpoint']):
-        project_type = "api"
-    elif any(word in desc_lower for word in ['mobile', 'ios', 'android']):
-        project_type = "mobile-app"
-    
-    questions = {
-        "web-application": [
-            "Does the application handle user authentication?",
-            "Does it process sensitive data (PII, financial, etc.)?", 
-            "Does it integrate with external APIs?",
-            "Is it publicly accessible?",
-            "Does it use a database?",
-            "Are there file upload capabilities?"
-        ],
-        "api": [
-            "Does the API require authentication?",
-            "Does it handle sensitive data?",
-            "Is rate limiting implemented?",
-            "Are there different permission levels?",
-            "Does it integrate with external services?"
-        ],
-        "mobile-app": [
-            "Does the app store data locally?",
-            "Does it use biometric authentication?",
-            "Does it communicate with backend services?",
-            "Does it access device sensors/location?"
-        ]
-    }
-    
-    threats = {
-        "web-application": ["injection", "broken-authentication", "sensitive-data-exposure"],
-        "api": ["injection", "broken-authentication", "excessive-data-exposure", "lack-of-rate-limiting"],
-        "mobile-app": ["insecure-data-storage", "insecure-communication", "insecure-authentication"]
-    }
-    
-    formatted = f"""
-🚨 **Security Risk Assessment**
-
-**📋 Project:** {project_description}
-**🏷️ Type:** {project_type.replace('-', ' ').title()}
-
-**❓ Key Security Questions:**
-"""
-    
-    for i, question in enumerate(questions.get(project_type, []), 1):
-        formatted += f"{i}. {question}\n"
-    
-    formatted += f"""
-**⚠️ Common Risk Areas:**
-"""
-    
-    threat_descriptions = {
-        'injection': 'SQL/Code injection attacks through user input',
-        'broken-authentication': 'Weak login systems and session management', 
-        'sensitive-data-exposure': 'Unprotected sensitive information',
-        'excessive-data-exposure': 'APIs returning too much information',
-        'lack-of-rate-limiting': 'No protection against abuse/DoS',
-        'insecure-data-storage': 'Sensitive data stored insecurely',
-        'insecure-communication': 'Unencrypted or weak communication'
-    }
-    
-    for threat in threats.get(project_type, []):
-        description = threat_descriptions.get(threat, 'Security vulnerability')
-        formatted += f"- **{threat.replace('-', ' ').title()}**: {description}\n"
-    
-    formatted += f"""
-**🔧 Next Steps:**
-- Answer the questions above honestly
-- Use the original tools like 'create_threat_model' to formalize this
-- Consider security controls for each risk area
-
-💡 **Pro tip**: Use 'create_collection' first to organize your threat models!
-"""
-    
-    return formatted
-
 # Removed duplicate create_new_collection - use create_collection instead
 
 @mcp.tool()
-async def create_new_threat_model(name: str, collection_name: str = None, description: str = None) -> str:
+async def create_new_threat_model(name: str, collection_name: str | None = None, description: str | None = None) -> str:
     """Create a new threat model in a collection - like starting a new security assessment document"""
     async with create_client_from_env() as client:
         
@@ -373,528 +272,7 @@ ID for reference: {collection_id}
 # =============================================================================
 
 @mcp.tool()
-async def quick_security_scan(project_description: str) -> str:
-    """Give me immediate security insights for my project - no questions, just results"""
-    
-    desc = project_description.lower()
-    
-    # Auto-detect technologies and risks
-    tech_stack = []
-    critical_risks = []
-    immediate_actions = []
-    
-    # Detect technologies
-    if any(word in desc for word in ['react', 'vue', 'angular', 'frontend', 'web app', 'website']):
-        tech_stack.append("Frontend Web App")
-        critical_risks.extend([
-            "🚨 XSS attacks through user input",
-            "🚨 Insecure authentication flows",
-            "⚠️ Client-side data exposure"
-        ])
-        immediate_actions.extend([
-            "Implement Content Security Policy (CSP)",
-            "Validate all user inputs",
-            "Use secure authentication tokens"
-        ])
-    
-    if any(word in desc for word in ['api', 'rest', 'backend', 'server', 'node', 'express']):
-        tech_stack.append("Backend API")
-        critical_risks.extend([
-            "🚨 SQL injection vulnerabilities",
-            "🚨 Broken access control",
-            "⚠️ No rate limiting"
-        ])
-        immediate_actions.extend([
-            "Use parameterized queries",
-            "Implement proper authentication",
-            "Add rate limiting middleware"
-        ])
-    
-    if any(word in desc for word in ['database', 'postgres', 'mysql', 'mongo', 'redis']):
-        tech_stack.append("Database Layer")
-        critical_risks.extend([
-            "🚨 Data exposure through injection",
-            "⚠️ Unencrypted sensitive data",
-            "⚠️ Weak access controls"
-        ])
-        immediate_actions.extend([
-            "Encrypt sensitive data at rest",
-            "Use least privilege database access",
-            "Enable database audit logging"
-        ])
-    
-    if any(word in desc for word in ['payment', 'credit card', 'stripe', 'paypal']):
-        tech_stack.append("Payment Processing")
-        critical_risks.extend([
-            "🚨 PCI DSS compliance violations",
-            "🚨 Payment data exposure",
-            "🚨 Transaction manipulation"
-        ])
-        immediate_actions.extend([
-            "Never store card data locally",
-            "Use tokenization for payments",
-            "Implement transaction logging"
-        ])
-    
-    if any(word in desc for word in ['mobile', 'ios', 'android', 'app store']):
-        tech_stack.append("Mobile Application")
-        critical_risks.extend([
-            "🚨 Insecure local data storage",
-            "⚠️ Weak encryption",
-            "⚠️ Insecure API communication"
-        ])
-        immediate_actions.extend([
-            "Use device keychain/keystore",
-            "Implement certificate pinning",
-            "Encrypt all API communications"
-        ])
-    
-    # Generate immediate report
-    report = f"""
-🔍 **Instant Security Analysis**
-
-**🏗️ Detected Tech Stack:** {', '.join(tech_stack) if tech_stack else 'General Application'}
-
-**🚨 CRITICAL RISKS (Fix Immediately):**
-"""
-    
-    for risk in critical_risks[:5]:  # Top 5 most critical
-        report += f"   {risk}\n"
-    
-    report += f"""
-**⚡ IMMEDIATE ACTIONS (Do Today):**
-"""
-    
-    for action in immediate_actions[:5]:  # Top 5 most urgent
-        report += f"   • {action}\n"
-    
-    report += f"""
-**📊 Quick Risk Score:** {len(critical_risks) * 2}/10 (Higher = More Risk)
-
-**🎯 Next:** Use 'create_threat_model' with collection ID 2eca33f8-4575-4999-90c4-09a67e2ddc7b to formalize this analysis.
-"""
-    
-    return report
-
-@mcp.tool()
-async def analyze_current_project() -> str:
-    """Automatically analyze this project directory to understand tech stack and security risks"""
-    import os
-    import json
-    from pathlib import Path
-    
-    # Get current working directory
-    project_path = os.getcwd()
-    project_name = os.path.basename(project_path)
-    
-    # Analyze files and structure
-    tech_indicators = {}
-    security_files = []
-    config_files = []
-    dependencies = []
-    file_count = 0
-    
-    try:
-        for root, dirs, files in os.walk(project_path):
-            # Skip hidden and node_modules directories
-            dirs[:] = [d for d in dirs if not d.startswith('.') and d != 'node_modules' and d != '__pycache__']
-            
-            for file in files:
-                if file.startswith('.'):
-                    continue
-                    
-                file_count += 1
-                file_path = os.path.join(root, file)
-                file_ext = os.path.splitext(file)[1].lower()
-                
-                # Detect technologies by file extensions and names
-                if file_ext in ['.js', '.jsx', '.ts', '.tsx']:
-                    tech_indicators['JavaScript/TypeScript'] = tech_indicators.get('JavaScript/TypeScript', 0) + 1
-                elif file_ext in ['.py']:
-                    tech_indicators['Python'] = tech_indicators.get('Python', 0) + 1
-                elif file_ext in ['.java']:
-                    tech_indicators['Java'] = tech_indicators.get('Java', 0) + 1
-                elif file_ext in ['.go']:
-                    tech_indicators['Go'] = tech_indicators.get('Go', 0) + 1
-                elif file_ext in ['.rs']:
-                    tech_indicators['Rust'] = tech_indicators.get('Rust', 0) + 1
-                elif file_ext in ['.php']:
-                    tech_indicators['PHP'] = tech_indicators.get('PHP', 0) + 1
-                elif file_ext in ['.rb']:
-                    tech_indicators['Ruby'] = tech_indicators.get('Ruby', 0) + 1
-                elif file_ext in ['.cs']:
-                    tech_indicators['C#'] = tech_indicators.get('C#', 0) + 1
-                elif file_ext in ['.cpp', '.c', '.h']:
-                    tech_indicators['C/C++'] = tech_indicators.get('C/C++', 0) + 1
-                
-                # Framework/library detection
-                if file == 'package.json':
-                    try:
-                        with open(file_path, 'r') as f:
-                            pkg_data = json.load(f)
-                            deps = {**pkg_data.get('dependencies', {}), **pkg_data.get('devDependencies', {})}
-                            
-                            if 'react' in deps:
-                                tech_indicators['React'] = 1
-                            if 'vue' in deps:
-                                tech_indicators['Vue.js'] = 1
-                            if 'angular' in deps or '@angular/core' in deps:
-                                tech_indicators['Angular'] = 1
-                            if 'express' in deps:
-                                tech_indicators['Express.js'] = 1
-                            if 'next' in deps or 'nextjs' in deps:
-                                tech_indicators['Next.js'] = 1
-                            if any(k.startswith('@nestjs') for k in deps):
-                                tech_indicators['NestJS'] = 1
-                                
-                            dependencies.extend(list(deps.keys())[:10])  # Top 10 deps
-                    except:
-                        pass
-                        
-                elif file == 'requirements.txt':
-                    try:
-                        with open(file_path, 'r') as f:
-                            reqs = f.read().splitlines()
-                            for req in reqs[:10]:  # Top 10
-                                dep_name = req.split('==')[0].split('>=')[0].split('<=')[0]
-                                dependencies.append(dep_name)
-                                
-                                if dep_name in ['django']:
-                                    tech_indicators['Django'] = 1
-                                elif dep_name in ['flask']:
-                                    tech_indicators['Flask'] = 1
-                                elif dep_name in ['fastapi']:
-                                    tech_indicators['FastAPI'] = 1
-                    except:
-                        pass
-                
-                elif file == 'pyproject.toml':
-                    tech_indicators['Python Project'] = 1
-                elif file == 'Cargo.toml':
-                    tech_indicators['Rust Project'] = 1
-                elif file == 'go.mod':
-                    tech_indicators['Go Module'] = 1
-                elif file == 'pom.xml':
-                    tech_indicators['Maven/Java'] = 1
-                elif file == 'Dockerfile':
-                    tech_indicators['Docker'] = 1
-                elif file in ['docker-compose.yml', 'docker-compose.yaml']:
-                    tech_indicators['Docker Compose'] = 1
-                    
-                # Security-related files
-                if file in ['.env', '.env.local', '.env.production', 'config.json', 'secrets.json']:
-                    security_files.append(file)
-                elif 'key' in file.lower() or 'cert' in file.lower() or 'secret' in file.lower():
-                    security_files.append(file)
-                    
-                # Config files
-                if file in ['config.js', 'config.py', 'settings.py', 'app.config', 'web.config']:
-                    config_files.append(file)
-                    
-                if file_count > 1000:  # Limit scanning for performance
-                    break
-            
-            if file_count > 1000:
-                break
-    
-    except Exception as e:
-        return f"❌ Error analyzing project: {str(e)}"
-    
-    # Determine primary tech stack
-    primary_tech = max(tech_indicators.items(), key=lambda x: x[1])[0] if tech_indicators else "Unknown"
-    
-    # Generate security analysis based on detected technologies
-    security_analysis = f"""
-🔍 **Auto-Analysis: {project_name}**
-
-**📁 Project Overview:**
-- 📄 Files scanned: {file_count}
-- 🏗️ Primary technology: {primary_tech}
-- 📦 Dependencies found: {len(dependencies)}
-
-**🛠️ Detected Technologies:**
-"""
-    
-    # Show top technologies
-    sorted_tech = sorted(tech_indicators.items(), key=lambda x: x[1], reverse=True)
-    for tech, count in sorted_tech[:5]:
-        security_analysis += f"   • {tech} ({count} files)\n"
-    
-    # Security-specific analysis
-    security_analysis += f"\n**🚨 Security Observations:**\n"
-    
-    if security_files:
-        security_analysis += f"   ⚠️ Found {len(security_files)} potential secret files: {', '.join(security_files[:3])}\n"
-    
-    if 'JavaScript/TypeScript' in tech_indicators:
-        security_analysis += f"   • Frontend risks: XSS, CSRF, client-side data exposure\n"
-        
-    if any(tech in tech_indicators for tech in ['Express.js', 'FastAPI', 'Django', 'Flask']):
-        security_analysis += f"   • Backend API risks: injection attacks, broken auth, rate limiting\n"
-        
-    if 'Docker' in tech_indicators:
-        security_analysis += f"   • Container risks: image vulnerabilities, privilege escalation\n"
-        
-    if any('database' in dep.lower() or 'sql' in dep.lower() for dep in dependencies):
-        security_analysis += f"   • Database risks: SQL injection, data encryption, access control\n"
-    
-    # Immediate recommendations
-    security_analysis += f"\n**⚡ Immediate Actions:**\n"
-    
-    if security_files:
-        security_analysis += f"   1. Review {security_files[0]} for exposed secrets\n"
-        
-    if 'React' in tech_indicators:
-        security_analysis += f"   2. Add Content Security Policy for XSS protection\n"
-        security_analysis += f"   3. Validate all user inputs\n"
-    elif 'Python' in tech_indicators:
-        security_analysis += f"   2. Use parameterized queries for database access\n"
-        security_analysis += f"   3. Add input validation middleware\n"
-    else:
-        security_analysis += f"   2. Implement input validation on all endpoints\n"
-        security_analysis += f"   3. Add authentication to sensitive operations\n"
-    
-    security_analysis += f"   4. Enable HTTPS/TLS for all communications\n"
-    security_analysis += f"   5. Add rate limiting to prevent abuse\n"
-    
-    # Quick wins for this specific tech stack
-    if primary_tech in ['JavaScript/TypeScript', 'React', 'Express.js']:
-        security_analysis += f"\n**🚀 Quick Wins for {primary_tech}:**\n"
-        security_analysis += f"   • npm install helmet express-rate-limit\n"
-        security_analysis += f"   • Add CSP headers\n"
-        security_analysis += f"   • Use HTTPS redirects\n"
-    elif primary_tech in ['Python', 'Django', 'Flask', 'FastAPI']:
-        security_analysis += f"\n**🚀 Quick Wins for {primary_tech}:**\n"
-        security_analysis += f"   • pip install python-dotenv\n"
-        security_analysis += f"   • Use environment variables for secrets\n"
-        security_analysis += f"   • Add CORS and security headers\n"
-    
-    security_analysis += f"\n**🎯 Next Steps:**\n"
-    security_analysis += f"   • Use 'security_quick_wins(\"{primary_tech.lower()}\")' for specific advice\n"
-    security_analysis += f"   • Use 'generate_security_checklist()' for comprehensive list\n"
-    security_analysis += f"   • Use 'threat_model_template(\"{project_name}\")' to formalize threats\n"
-    
-    return security_analysis
-
-@mcp.tool()
-async def generate_security_checklist(project_type: str = "web-app") -> str:
-    """Generate an actionable security checklist I can use right now"""
-    
-    checklists = {
-        "web-app": """
-🔒 **Web Application Security Checklist**
-
-**🚨 CRITICAL (Do First):**
-☐ Input validation on all forms
-☐ SQL injection prevention (parameterized queries)
-☐ XSS protection (escape all outputs)
-☐ HTTPS everywhere
-☐ Secure session management
-
-**⚠️ HIGH PRIORITY:**
-☐ Content Security Policy (CSP)
-☐ Rate limiting on APIs
-☐ Proper error handling (no stack traces to users)
-☐ Access control on all endpoints
-☐ Password hashing (bcrypt/Argon2)
-
-**📋 STANDARD:**
-☐ Security headers (HSTS, X-Frame-Options)
-☐ File upload restrictions
-☐ Logging and monitoring
-☐ Regular dependency updates
-☐ Security testing in CI/CD
-""",
-        
-        "api": """
-🔒 **API Security Checklist**
-
-**🚨 CRITICAL (Do First):**
-☐ Authentication on all endpoints
-☐ Input validation and sanitization
-☐ Rate limiting per user/IP
-☐ SQL injection prevention
-☐ Authorization checks per endpoint
-
-**⚠️ HIGH PRIORITY:**
-☐ API versioning strategy
-☐ Request/response size limits
-☐ Proper HTTP status codes
-☐ CORS configuration
-☐ API key rotation capability
-
-**📋 STANDARD:**
-☐ Comprehensive logging
-☐ API documentation security review
-☐ Error message sanitization
-☐ Dependency vulnerability scanning
-☐ Load testing under attack scenarios
-""",
-        
-        "mobile": """
-🔒 **Mobile App Security Checklist**
-
-**🚨 CRITICAL (Do First):**
-☐ Secure local data storage (keychain/keystore)
-☐ Certificate pinning for API calls
-☐ Biometric authentication implementation
-☐ App transport security
-☐ Root/jailbreak detection
-
-**⚠️ HIGH PRIORITY:**
-☐ Code obfuscation
-☐ Anti-debugging measures
-☐ Secure communication protocols
-☐ Session timeout handling
-☐ Secure backup handling
-
-**📋 STANDARD:**
-☐ App store security compliance
-☐ Third-party library security review
-☐ Runtime application self-protection
-☐ Penetration testing
-☐ Security incident response plan
-"""
-    }
-    
-    checklist = checklists.get(project_type, checklists["web-app"])
-    
-    return f"{checklist}\n**💡 Pro tip:** Check off items as you complete them. Each ☐ represents a real security improvement."
-
-@mcp.tool()
-async def security_quick_wins(technology: str) -> str:
-    """Give me 5 quick security improvements I can implement in the next hour"""
-    
-    tech = technology.lower()
-    
-    quick_wins = {
-        "node": [
-            "Add 'helmet' middleware for security headers",
-            "Set up 'express-rate-limit' for DoS protection", 
-            "Use 'express-validator' for input sanitization",
-            "Enable HTTPS with 'express-sslify'",
-            "Add 'cors' with proper origin restrictions"
-        ],
-        "react": [
-            "Add Content Security Policy in index.html",
-            "Use 'DOMPurify' for sanitizing user content",
-            "Implement proper error boundaries",
-            "Use environment variables for API endpoints",
-            "Add 'react-helmet' for security headers"
-        ],
-        "python": [
-            "Use 'secrets' module for cryptographic tokens",
-            "Add 'flask-limiter' for rate limiting",
-            "Implement 'flask-talisman' for security headers",
-            "Use 'sqlalchemy' ORM to prevent SQL injection",
-            "Add 'python-dotenv' for secure config"
-        ],
-        "general": [
-            "Enable HTTPS/TLS everywhere",
-            "Implement input validation on all forms",
-            "Add rate limiting to prevent abuse",
-            "Use environment variables for secrets",
-            "Enable security logging and monitoring"
-        ]
-    }
-    
-    wins = quick_wins.get(tech, quick_wins["general"])
-    
-    result = f"""
-⚡ **5 Quick Security Wins for {technology.title()}**
-
-**✅ Implement these in the next hour:**
-
-"""
-    
-    for i, win in enumerate(wins, 1):
-        result += f"{i}. {win}\n"
-    
-    result += f"""
-**🚀 Impact:** These 5 changes will immediately improve your security posture by ~70%.
-
-**⏰ Time:** ~10-15 minutes each
-**🛡️ Protection:** Covers the most common attack vectors
-"""
-    
-    return result
-
-@mcp.tool()
-async def threat_model_template(project_name: str, project_type: str = "web-app") -> str:
-    """Create a ready-to-use threat model template with real threats for my project"""
-    
-    templates = {
-        "web-app": {
-            "components": ["Web Frontend", "API Server", "Database", "User Authentication"],
-            "threats": [
-                "Cross-Site Scripting (XSS) in user inputs",
-                "SQL Injection in database queries", 
-                "Broken authentication allowing unauthorized access",
-                "Sensitive data exposure through error messages",
-                "Cross-Site Request Forgery (CSRF) attacks"
-            ],
-            "mitigations": [
-                "Input validation and output encoding",
-                "Parameterized database queries",
-                "Multi-factor authentication",
-                "Proper error handling without data leakage",
-                "CSRF tokens on all state-changing operations"
-            ]
-        },
-        "api": {
-            "components": ["API Gateway", "Business Logic", "Data Layer", "Authentication Service"],
-            "threats": [
-                "API injection attacks through parameters",
-                "Broken authorization bypassing access controls",
-                "Excessive data exposure in API responses",
-                "Rate limiting bypass leading to DoS",
-                "Insecure API key management"
-            ],
-            "mitigations": [
-                "API input validation and sanitization",
-                "Proper authorization checks per endpoint",
-                "Response filtering to minimize data exposure",
-                "Robust rate limiting and throttling",
-                "Secure API key rotation and storage"
-            ]
-        }
-    }
-    
-    template = templates.get(project_type, templates["web-app"])
-    
-    result = f"""
-📋 **Threat Model: {project_name}**
-
-**🏗️ Key Components:**
-"""
-    
-    for comp in template["components"]:
-        result += f"   • {comp}\n"
-    
-    result += f"""
-**🚨 Identified Threats:**
-"""
-    
-    for i, threat in enumerate(template["threats"], 1):
-        result += f"   {i}. {threat}\n"
-    
-    result += f"""
-**🛡️ Recommended Mitigations:**
-"""
-    
-    for i, mitigation in enumerate(template["mitigations"], 1):
-        result += f"   {i}. {mitigation}\n"
-    
-    result += f"""
-**✅ Ready to use:** Copy this into your threat model documentation
-**🎯 Next step:** Use 'create_threat_model' to save this in Devici
-**⏰ Review:** Schedule quarterly reviews to keep this current
-"""
-    
-    return result
-
-@mcp.tool()
-async def generate_otm_and_create_threat_model(collection_name: str = None) -> str:
+async def generate_otm_and_create_threat_model(collection_name: str | None = None) -> str:
     """Generate an Open Threat Model (OTM) from current project and create threat model in Devici"""
     import os
     import json
@@ -1646,12 +1024,29 @@ async def import_otm_to_devici(otm_file_path: str, collection_name: str = "Sandb
                 threats_created = len(otm_data.get("threats", []))
                 mitigations_created = len(otm_data.get("mitigations", []))
                 
-                return f"""
+                # Try to extract threat model ID from the result
+                threat_model_id = result.get("id") or result.get("threatModelId")
+                
+                # Construct Devici URLs
+                base_url = "https://app.devici.com"
+                collection_url = f"{base_url}/collections/{target_collection_id}"
+                threat_model_url = f"{base_url}/collections/{target_collection_id}/d/{threat_model_id}" if threat_model_id else None
+                
+                result_text = f"""
 ✅ **OTM File Imported to Devici!**
 
 **📁 File:** `{otm_file_path}`
 **📂 Collection:** {collection_name}
 **🆔 Collection ID:** {target_collection_id}
+
+**🚀 INSTANT ACCESS - Click to Open:**
+**📁 View Collection:** [{collection_url}]({collection_url})"""
+
+                if threat_model_url:
+                    result_text += f"""
+**🔗 View Threat Model:** [{threat_model_url}]({threat_model_url})"""
+
+                result_text += f"""
 
 **📊 Import Summary:**
    • 🎯 **Threat Model:** {project_name}
@@ -1659,15 +1054,27 @@ async def import_otm_to_devici(otm_file_path: str, collection_name: str = "Sandb
    • 🚨 **Threats:** {threats_created} created  
    • 🛡️ **Mitigations:** {mitigations_created} created
 
-**🚀 Next Steps:**
-1. **Open Devici Platform** → Navigate to your '{collection_name}' collection
-2. **View Threat Model** → You should now see components and threats!
-3. **Review Components** → Check that all architectural elements are visible
-4. **Review Threats** → Verify STRIDE threats are properly linked to components
-5. **Review Mitigations** → Ensure security controls are linked to threats
+**👥 TEAM SHARING:**
+Share these URLs with your team:
+- **Collection:** `{collection_url}`"""
 
-**🔗 Access:** Your complete threat model with components and threats is now available in Devici!
+                if threat_model_url:
+                    result_text += f"""
+- **Threat Model:** `{threat_model_url}`"""
+
+                result_text += f"""
+
+**🚀 Next Steps:**
+1. **Click URLs Above** → Direct access to your threat model
+2. **Review Components** → Check that all architectural elements are visible
+3. **Review Threats** → Verify STRIDE threats are properly linked to components
+4. **Review Mitigations** → Ensure security controls are linked to threats
+5. **Share with Team** → Use URLs above for collaboration
+
+✅ **Ready for Security Discussion!** Your threat model is now live in Devici.
 """
+                
+                return result_text
                 
             except Exception as api_error:
                 print(f"❌ OTM import failed: {api_error}")
@@ -1862,15 +1269,15 @@ async def create_otm_from_description(project_description: str, tech_stack: str 
         {
             "name": "Privilege Escalation",
             "category": "elevation-of-privilege",
-            "description": "Attackers gain unauthorized higher-level permissions",
+            "description": "Attackers gain unauthorized access to admin functions or data",
             "impact": "High",
-            "likelihood": "Low",
+            "likelihood": "Medium",
             "severity": "High"
         }
     ]
     
     # Add context-specific threats
-    if 'payment' in desc_lower or 'financial' in desc_lower:
+    if 'payment' in desc_lower or project_type == "mobile-app":
         base_threats.append({
             "name": "Payment Fraud",
             "category": "tampering",
@@ -1915,8 +1322,8 @@ async def create_otm_from_description(project_description: str, tech_stack: str 
             "riskReduction": 75
         },
         {
-            "name": "End-to-End Encryption",
-            "description": "Encrypt data in transit and at rest using strong cryptography",
+            "name": "HTTPS Encryption",
+            "description": "Use TLS encryption for all data in transit",
             "riskReduction": 90
         },
         {
@@ -1935,7 +1342,7 @@ async def create_otm_from_description(project_description: str, tech_stack: str 
     if 'payment' in desc_lower:
         mitigations.append({
             "name": "PCI DSS Compliance",
-            "description": "Implement PCI DSS security standards for payment processing",
+            "description": "Implement Payment Card Industry security standards",
             "riskReduction": 95
         })
     
@@ -2355,6 +1762,11 @@ async def create_complete_threat_model_with_components(
             tm_details = await client.get_threat_model(threat_model_id)
             canvas_id = tm_details.get("canvases", [None])[0]
             
+            # Construct Devici URLs using correct pattern
+            base_url = "https://app.devici.com"
+            collection_url = f"{base_url}/collections/{collection_id}"
+            threat_model_url = f"{base_url}/collections/{collection_id}/d/{threat_model_id}"
+            
             result = f"""✅ Threat model created successfully!
 
 **Threat Model Details:**
@@ -2362,6 +1774,15 @@ async def create_complete_threat_model_with_components(
 - ID: {threat_model_id}
 - Collection: {collection_name}
 - Canvas: {canvas_id}
+
+**🚀 INSTANT ACCESS - Click to Open:**
+**🔗 View Threat Model:** [{threat_model_url}]({threat_model_url})
+**📁 View Collection:** [{collection_url}]({collection_url})
+
+**👥 TEAM SHARING:**
+Share these URLs with your team:
+- **Threat Model:** `{threat_model_url}`
+- **Collection:** `{collection_url}`
 
 **Browser Learning Integration:**
 - Uses OAuth2 authentication flow learned from API analysis
@@ -2378,16 +1799,419 @@ create_component_with_visual_placement("Web Server", "process", "{threat_model_i
 create_component_with_visual_placement("User Database", "datastore", "{threat_model_id}", "User credentials and data")
 create_component_with_visual_placement("External API", "external-service", "{threat_model_id}", "Third-party service")
 
-**View Results:**
-- Open: https://app.devici.com
-- Navigate to: {collection_name} collection
-- Open: {threat_model_title}
+✅ **Ready for Security Discussion!** Your team can now collaborate using the URLs above.
 """
             
             return result
             
         except Exception as e:
             return f"❌ Failed to create threat model: {str(e)}"
+
+@mcp.tool()
+async def create_developer_threat_model(
+    project_name: str,
+    project_description: str,
+    tech_stack: str = "",
+    collection_name: str = "Development Projects"
+) -> str:
+    """
+    🚀 DEVELOPER WORKFLOW: Create a threat model and get instant Devici URLs for team discussion
+    
+    Perfect for software developers who want to:
+    - Start a security discussion with their team
+    - Get immediate access to visual threat model
+    - Share clickable URLs with security team
+    - Begin threat modeling without security expertise
+    
+    Args:
+        project_name: Name of your project/application
+        project_description: Brief description of what your app does
+        tech_stack: Technologies used (e.g., "React, Node.js, PostgreSQL")
+        collection_name: Devici collection to organize your threat models
+    """
+    import json
+    import uuid
+    from datetime import datetime
+    
+    try:
+        # Generate OTM from description (reuse existing logic)
+        desc_lower = project_description.lower()
+        tech_lower = tech_stack.lower()
+        
+        # Determine project type
+        project_type = "web-application"
+        if any(word in desc_lower for word in ['api', 'rest', 'microservice', 'endpoint', 'backend']):
+            project_type = "api"
+        elif any(word in desc_lower for word in ['mobile', 'ios', 'android', 'app']):
+            project_type = "mobile-app"
+        elif any(word in desc_lower for word in ['desktop', 'electron', 'native']):
+            project_type = "desktop-app"
+        
+        # Generate components based on description
+        components = []
+        trust_zones = []
+        data_flows = []
+        
+        # Frontend detection
+        if any(word in desc_lower or word in tech_lower for word in ['react', 'vue', 'angular', 'frontend', 'web', 'browser', 'ui']):
+            components.append({
+                "name": "Web Frontend",
+                "type": "web-application", 
+                "description": "User interface layer handling client interactions",
+                "tags": ["frontend", "ui", "client-side"]
+            })
+            trust_zones.append({
+                "name": "Client Browser",
+                "type": "b2c-web-application",
+                "description": "User's web browser environment"
+            })
+        
+        # Backend/API detection
+        if any(word in desc_lower or word in tech_lower for word in ['api', 'backend', 'server', 'node', 'python', 'java', 'go', 'rust', 'php']):
+            backend_name = "API Server"
+            if 'microservice' in desc_lower:
+                backend_name = "Microservices"
+            elif 'serverless' in desc_lower:
+                backend_name = "Serverless Functions"
+            
+            components.append({
+                "name": backend_name,
+                "type": "web-service",
+                "description": "Backend services handling business logic and data processing",
+                "tags": ["backend", "api", "server"]
+            })
+            trust_zones.append({
+                "name": "Application Server",
+                "type": "private-secured", 
+                "description": "Internal application server environment"
+            })
+        
+        # Database detection
+        if any(word in desc_lower or word in tech_lower for word in ['database', 'db', 'sql', 'mongo', 'postgres', 'mysql', 'redis', 'storage', 'data']):
+            db_type = "SQL Database"
+            if any(word in desc_lower or word in tech_lower for word in ['mongo', 'nosql', 'document']):
+                db_type = "NoSQL Database"
+            elif any(word in desc_lower or word in tech_lower for word in ['redis', 'cache']):
+                db_type = "Cache Layer"
+            
+            components.append({
+                "name": db_type,
+                "type": "datastore",
+                "description": "Data persistence and storage layer",
+                "tags": ["database", "storage", "persistence"]
+            })
+            trust_zones.append({
+                "name": "Database Layer",
+                "type": "private-secured",
+                "description": "Secured database environment"
+            })
+        
+        # External services detection
+        if any(word in desc_lower for word in ['payment', 'stripe', 'paypal', 'third-party', 'external', 'integration']):
+            components.append({
+                "name": "External Services",
+                "type": "external-service",
+                "description": "Third-party services and integrations",
+                "tags": ["external", "third-party", "integration"]
+            })
+            trust_zones.append({
+                "name": "External Services",
+                "type": "public-cloud",
+                "description": "External third-party service providers"
+            })
+        
+        # Generate data flows between components
+        if len(components) >= 2:
+            for i in range(len(components) - 1):
+                data_flows.append({
+                    "name": f"{components[i]['name']} → {components[i+1]['name']}",
+                    "source": components[i]['name'],
+                    "destination": components[i+1]['name'],
+                    "description": f"Data communication between {components[i]['name']} and {components[i+1]['name']}",
+                    "tags": ["data-flow"]
+                })
+        
+        # Generate developer-focused STRIDE threats
+        threats = [
+            {
+                "name": "Authentication Bypass",
+                "category": "spoofing",
+                "description": "Attackers bypass authentication mechanisms to impersonate legitimate users",
+                "impact": "High",
+                "likelihood": "High" if 'auth' not in desc_lower and 'login' not in desc_lower else "Medium",
+                "severity": "High"
+            },
+            {
+                "name": "Data Tampering in Transit",
+                "category": "tampering", 
+                "description": "Man-in-the-middle attacks modify data between components",
+                "impact": "High",
+                "likelihood": "High" if 'https' not in desc_lower and 'ssl' not in desc_lower else "Low",
+                "severity": "High"
+            },
+            {
+                "name": "Sensitive Data Exposure",
+                "category": "information-disclosure",
+                "description": "Application logs, error messages, or APIs leak sensitive information",
+                "impact": "High",
+                "likelihood": "High" if any(word in desc_lower for word in ['personal', 'pii', 'payment', 'sensitive']) else "Medium",
+                "severity": "Critical" if any(word in desc_lower for word in ['payment', 'financial', 'pii']) else "High"
+            },
+            {
+                "name": "Application Denial of Service",
+                "category": "denial-of-service",
+                "description": "Resource exhaustion attacks make the application unavailable",
+                "impact": "Medium",
+                "likelihood": "High",
+                "severity": "Medium"
+            },
+            {
+                "name": "Privilege Escalation",
+                "category": "elevation-of-privilege",
+                "description": "Users gain unauthorized access to admin functions or data",
+                "impact": "High",
+                "likelihood": "Medium",
+                "severity": "High"
+            }
+        ]
+        
+        # Add context-specific threats for developers
+        if 'api' in desc_lower or project_type == "api":
+            threats.append({
+                "name": "API Injection Attacks",
+                "category": "tampering",
+                "description": "SQL injection, NoSQL injection, or command injection through API endpoints",
+                "impact": "Critical",
+                "likelihood": "High" if 'validation' not in desc_lower else "Medium",
+                "severity": "Critical"
+            })
+        
+        if 'mobile' in desc_lower or project_type == "mobile-app":
+            threats.append({
+                "name": "Mobile App Reverse Engineering",
+                "category": "information-disclosure",
+                "description": "Attackers reverse engineer mobile app to extract secrets or vulnerabilities",
+                "impact": "High",
+                "likelihood": "Medium",
+                "severity": "High"
+            })
+        
+        # Developer-focused mitigations
+        mitigations = [
+            {
+                "name": "Implement Strong Authentication",
+                "description": "Use multi-factor authentication and secure session management",
+                "riskReduction": 85
+            },
+            {
+                "name": "Input Validation & Output Encoding", 
+                "description": "Validate all inputs and encode outputs to prevent injection attacks",
+                "riskReduction": 80
+            },
+            {
+                "name": "HTTPS Everywhere",
+                "description": "Enforce HTTPS for all communications and use HSTS headers",
+                "riskReduction": 90
+            },
+            {
+                "name": "Rate Limiting & WAF",
+                "description": "Implement rate limiting and Web Application Firewall protection",
+                "riskReduction": 70
+            },
+            {
+                "name": "Principle of Least Privilege",
+                "description": "Grant minimum necessary permissions and implement role-based access",
+                "riskReduction": 75
+            }
+        ]
+        
+        # Add context-specific mitigations
+        if 'payment' in desc_lower:
+            mitigations.append({
+                "name": "PCI DSS Compliance",
+                "description": "Implement Payment Card Industry security standards",
+                "riskReduction": 95
+            })
+        
+        if 'api' in desc_lower:
+            mitigations.append({
+                "name": "API Security Best Practices",
+                "description": "Implement API authentication, rate limiting, and input validation",
+                "riskReduction": 80
+            })
+        
+        # Create OTM structure
+        otm_data = {
+            "otmVersion": "0.1.0",
+            "project": {
+                "name": project_name,
+                "id": str(uuid.uuid4()),
+                "description": project_description,
+                "owner": "Development Team",
+                "ownerContact": "",
+                "tags": ["developer-generated", "security-discussion", "devici-ready"]
+            },
+            "representations": [
+                {
+                    "name": "Architecture Overview",
+                    "id": str(uuid.uuid4()),
+                    "type": "threat-model",
+                    "size": {"width": 1000, "height": 1000}
+                }
+            ],
+            "trustZones": [
+                {
+                    "id": str(uuid.uuid4()),
+                    "name": tz["name"],
+                    "type": tz["type"], 
+                    "description": tz["description"],
+                    "risk": {"trustRating": 10 if "private" in tz["type"] else 3}
+                } for tz in trust_zones
+            ],
+            "components": [
+                {
+                    "id": str(uuid.uuid4()),
+                    "name": comp["name"],
+                    "type": comp["type"],
+                    "description": comp["description"], 
+                    "tags": comp["tags"]
+                } for comp in components
+            ],
+            "dataflows": [
+                {
+                    "id": str(uuid.uuid4()),
+                    "name": df["name"],
+                    "source": df["source"],
+                    "destination": df["destination"],
+                    "description": df["description"],
+                    "tags": df["tags"]
+                } for df in data_flows
+            ],
+            "threats": [
+                {
+                    "id": str(uuid.uuid4()),
+                    "name": threat["name"],
+                    "categories": [threat["category"]],
+                    "description": threat["description"],
+                    "risk": {
+                        "impact": threat["impact"],
+                        "impactComment": f"{threat['severity']} severity {threat['category']} threat"
+                    },
+                    "tags": ["stride", threat["category"], "developer-focused"]
+                } for threat in threats
+            ],
+            "mitigations": [
+                {
+                    "id": str(uuid.uuid4()),
+                    "name": mit["name"],
+                    "description": mit["description"],
+                    "riskReduction": mit["riskReduction"],
+                    "tags": ["security-control", "developer-actionable"]
+                } for mit in mitigations
+            ]
+        }
+        
+        # Validate OTM data
+        is_valid, validation_message = validate_otm_data(otm_data)
+        if not is_valid:
+            return f"❌ Generated OTM failed validation:\n{validation_message}"
+        
+        # Create threat model in Devici
+        async with create_client_from_env() as client:
+            # Get or create collection
+            collections_result = await client.get_collections(limit=50, page=0)
+            
+            if isinstance(collections_result, dict) and 'items' in collections_result:
+                collections_data = collections_result['items']
+            else:
+                return f"❌ Failed to get collections: {collections_result}"
+            
+            target_collection = None
+            if collection_name:
+                # Find specified collection
+                for collection in collections_data:
+                    if collection.get("title", "").lower() == collection_name.lower():
+                        target_collection = collection
+                        break
+            
+            if not target_collection:
+                # Create new collection
+                collection_data = {
+                    "title": collection_name,
+                    "description": f"Development projects and security assessments"
+                }
+                target_collection = await client.create_collection(collection_data)
+            
+            collection_id = target_collection["id"]
+            
+            # Import OTM using the working endpoint
+            endpoint = f"/threat-models/otm/{collection_id}"
+            
+            # Add collection ID to OTM data
+            otm_data["collectionId"] = collection_id
+            
+            # Import the OTM
+            result = await client._make_request("POST", endpoint, json_data=otm_data)
+            
+            # Extract threat model ID from response
+            threat_model_id = result.get("id") or result.get("threatModelId")
+            
+            if not threat_model_id:
+                return f"❌ Failed to create threat model - no ID returned from import"
+            
+            # Construct Devici URLs using correct pattern
+            base_url = "https://app.devici.com"
+            collection_url = f"{base_url}/collections/{collection_id}"
+            threat_model_url = f"{base_url}/collections/{collection_id}/d/{threat_model_id}"
+            
+            # Generate developer-focused response
+            return f"""
+🎯 **Developer Threat Model Created Successfully!**
+
+**📋 Project Details:**
+- **Name:** {project_name}
+- **Type:** {project_type.replace('-', ' ').title()}
+- **Components:** {len(components)} detected
+- **Threats:** {len(threats)} identified
+- **Security Controls:** {len(mitigations)} recommended
+
+**🚀 INSTANT ACCESS - Click to Open:**
+
+**🔗 View Threat Model:** [{threat_model_url}]({threat_model_url})
+**📁 View Collection:** [{collection_url}]({collection_url})
+
+**👥 TEAM SHARING:**
+Share these URLs with your security team for discussion:
+- **Threat Model:** `{threat_model_url}`
+- **Collection:** `{collection_url}`
+
+**🏗️ Architecture Detected:**
+{chr(10).join(f"   • {comp['name']} ({comp['type']})" for comp in components)}
+
+**🚨 Key Security Concerns:**
+{chr(10).join(f"   • {threat['name']} ({threat['severity']} severity)" for threat in threats[:3])}
+
+**🛡️ Recommended Actions:**
+{chr(10).join(f"   • {mit['name']} ({mit['riskReduction']}% risk reduction)" for mit in mitigations[:3])}
+
+**🎯 Next Steps for Development Team:**
+1. **Review Threats:** Click the threat model URL above
+2. **Discuss with Security:** Share URLs with your security team
+3. **Prioritize Fixes:** Focus on High/Critical severity threats first
+4. **Implement Controls:** Start with highest risk reduction mitigations
+5. **Iterate:** Update the model as your architecture evolves
+
+**💡 Pro Tips:**
+- Use the visual canvas to understand data flows
+- Add custom threats specific to your business logic
+- Link threats to specific code components
+- Schedule regular threat model reviews
+
+✅ **Ready for Security Discussion!** Your team can now collaborate on security requirements.
+"""
+            
+    except Exception as e:
+        return f"❌ Error creating developer threat model: {str(e)}"
 
 # =============================================================================
 # ORIGINAL TOOLS - All Preserved for Compatibility
@@ -2411,7 +2235,7 @@ async def get_collection(collection_id: str) -> str:
         return str(result)
 
 @mcp.tool()
-async def create_collection(name: str, description: str = None, **other_properties) -> str:
+async def create_collection(name: str, description: str | None = None, **other_properties) -> str:
     """Create a new collection"""
     async with create_client_from_env() as client:
         collection_data = {"name": name}
@@ -2444,7 +2268,7 @@ async def get_threat_model(threat_model_id: str) -> str:
         return str(result)
 
 @mcp.tool()
-async def create_threat_model(name: str, collection_id: str, description: str = None, **other_properties) -> str:
+async def create_threat_model(name: str, collection_id: str, description: str | None = None, **other_properties) -> str:
     """Create a new threat model"""
     async with create_client_from_env() as client:
         threat_model_data = {
@@ -2547,7 +2371,7 @@ async def get_dashboard_types() -> str:
         return str(result)
 
 @mcp.tool()
-async def get_dashboard_data(chart_type: str, limit: int = 20, page: int = 0, start: str = None, end: str = None, project_id: str = None) -> str:
+async def get_dashboard_data(chart_type: str, limit: int = 20, page: int = 0, start: str | None = None, end: str | None = None, project_id: str | None = None) -> str:
     """Get dashboard data for a specific chart type"""
     async with create_client_from_env() as client:
         result = await client.get_dashboard_data(
@@ -2561,7 +2385,7 @@ async def get_dashboard_data(chart_type: str, limit: int = 20, page: int = 0, st
         return str(result)
 
 @mcp.tool()
-async def get_threat_models_report(start: str = None, end: str = None) -> str:
+async def get_threat_models_report(start: str | None = None, end: str | None = None) -> str:
     """Get threat models report data"""
     async with create_client_from_env() as client:
         result = await client.get_threat_models_report(start=start, end=end)
